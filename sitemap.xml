@@ -2,21 +2,21 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://djok.pages.dev/</loc>
+    <loc>https://djok.din02winchester25.workers.dev/</loc>
     <lastmod>2026-05-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://djok.pages.dev/"/>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://djok.pages.dev/?lang=ru"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://djok.din02winchester25.workers.dev/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://djok.din02winchester25.workers.dev/?lang=ru"/>
   </url>
   <url>
-    <loc>https://djok.pages.dev/sample-report.html</loc>
+    <loc>https://djok.din02winchester25.workers.dev/sample-report.html</loc>
     <lastmod>2026-05-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://djok.pages.dev/llms.txt</loc>
+    <loc>https://djok.din02winchester25.workers.dev/llms.txt</loc>
     <lastmod>2026-05-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

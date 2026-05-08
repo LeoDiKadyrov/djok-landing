@@ -34,8 +34,8 @@ Djok is for FACEIT level 8–10 CS2 players who train aim daily but cannot tell 
 
 ## Public surface
 
-- Landing: https://djok.pages.dev/
-- Sample report: https://djok.pages.dev/sample-report.html
+- Landing: https://djok.din02winchester25.workers.dev/
+- Sample report: https://djok.din02winchester25.workers.dev/sample-report.html
 - Submit form: https://tally.so/r/KYDaXV (linked from landing CTA)
 - Payment (paid tier): Boosty (https://boosty.to/leodikadyrov) for RU + Ko-fi (https://ko-fi.com/leodikadyrov) for international
 

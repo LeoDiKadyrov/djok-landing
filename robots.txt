@@ -6,4 +6,4 @@ Allow: /llms.txt
 Allow: /llms-full.txt
 
 # Sitemap
-Sitemap: https://djok.pages.dev/sitemap.xml
+Sitemap: https://djok.din02winchester25.workers.dev/sitemap.xml

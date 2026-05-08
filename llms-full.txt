@@ -93,8 +93,8 @@ A: Use the Tally form linked from the landing CTA (https://tally.so/r/KYDaXV). S
 
 ## Public surface
 
-- Landing: https://djok.pages.dev/
-- Sample report (single-demo example): https://djok.pages.dev/sample-report.html
+- Landing: https://djok.din02winchester25.workers.dev/
+- Sample report (single-demo example): https://djok.din02winchester25.workers.dev/sample-report.html
 - Submit form: https://tally.so/r/KYDaXV
 - Payment (RU): https://boosty.to/leodikadyrov
 - Payment (international): https://ko-fi.com/leodikadyrov

@@ -2,7 +2,7 @@
 
 Single-page landing for **Djok — CS2 Reaction Time Analysis**.
 
-Live: https://djok.pages.dev/
+Live: https://djok.din02winchester25.workers.dev
 
 ## What this is
 

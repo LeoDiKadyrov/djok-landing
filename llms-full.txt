@@ -1,0 +1,112 @@
+# Djok — Full Product Description (for AI agents and human reviewers)
+
+## What Djok answers
+
+A FACEIT level 8–10 CS2 player who trains aim daily wakes up after a 2200-ELO loss-streak and does not know **why** they lose duels. The standard aggregators (Leetify) bundle every reaction phase into one number. The aim trainers (Aim Lab, KovaaK's) drill bot reaction, not real-match perception. The streamer-style "demo review" services say "watch your demos" without instrumentation.
+
+Djok measures, on a real demo file the player just played, three independent reaction-time components per duel:
+
+1. **T0→T1 (perception)** — milliseconds between the enemy's first geometric appearance in the player's line of sight and the player's first detectable aim correction
+2. **T1→T2 (aim)** — milliseconds between aim-start and the first hit registered on `player_hurt`
+3. **Crosshair angle at T0** — degrees between where the player's crosshair already pointed and where the enemy actually appeared, at the moment the enemy became visible (a measure of pre-aim quality)
+
+Each metric is then classified against a fixed pro-tier ceiling (donk-class):
+- **Elite** — within +0% to +5% of donk's median
+- **Good** — within +6% to +25% of donk's median
+- **Average** — +25% to +60% of donk's median
+- **Work needed** — beyond +60%
+
+The classification is **absolute, not percentile**. A FACEIT level 9 player with an average T0→T1 of 240ms is "Average" because it is +40% over donk's 172ms — not because of where it falls relative to other level 9 players. This avoids the "best of a bad bucket" problem and gives the player a target instead of a rank.
+
+Each player receives one **drill prescription** mapped to their **worst metric** (free tier) or to **every metric** (paid tier). Drill prescriptions are deterministic — they map metric-tier pairs to specific in-game or workshop drills (e.g. `aim_botz` for Work-needed T1→T2, `prefire` map runs for Work-needed crosshair angle).
+
+## Method specifics
+
+### T0 — first geometric visibility
+
+- Source: awpy library's `VisibilityChecker` operating on the map's `.tri` mesh file (per-map, downloaded via `awpy_cli(['get','tris'])`)
+- Approach: cast rays from the player's eye position to 8 corners of an axis-aligned bounding box (AABB) around the enemy's collision shape (32×32×72 standing, 32×32×54 crouching)
+- Eye height offset: +64 units above the demoparser2 Z coordinate (player and enemy)
+- T0 = first tick at which **any** of the 8 corner rays returns a clear line of sight
+- Smoke overlay: sphere intersection test (r≈144u) against active smokes — if any smoke sphere intersects the LoS ray, the corner is occluded
+- Flash check: if a `player_blind` event covers the candidate tick, T0 is suppressed
+
+### T1 — aim-start
+
+- Source: `usercmd_viewangle_x` and `usercmd_viewangle_y` per tick from demoparser2
+- Approach: compute first and second derivative of pitch and yaw across a sliding window starting at T0 + 8 ticks (120ms grace period)
+- T1 = first tick where the second derivative spikes above an empirically-tuned threshold and stays above for ≥3 consecutive ticks (a sustained correction, not a single jitter)
+- If the player was already aiming exactly at the enemy at T0 (crosshair angle ≈ 0°) — pre-aim case — there is no detectable T1 spike, and Djok reports T0→T1 = 0 (collapsed) and the duel is gradeable on T0→T2 directly
+
+### T2 — first hit
+
+- Source: `player_hurt` event from demo, filtered to the duel's enemy (`target_enemy_id`)
+- T0_TO_T2_MAX_TICKS = 96 ticks (1.5s) — duels with T0→T2 longer than 1.5s are flagged ungradeable (cluster bleed risk per Phase 6 quality gates)
+
+### Crosshair angle
+
+- At tick T0, compute the angle between the player's `usercmd_viewangle` direction vector and the vector from player eye to enemy eye position
+- Reported in degrees, clamped to [0, 180]
+
+### Survivorship and sample size
+
+- Every metric carries an `n` — number of qualifying peeks/holds/duels for that player
+- Cross-player comparisons require careful framing: donk's 172ms is across 26 demos / 448 peeks of FACEIT-tier opponents; a level 9 player's 240ms is across their own demos
+- The relevant comparison is not "are you faster than donk" — the answer is no, by definition. The relevant comparison is "is your perception phase closer to donk's tier ceiling than your aim phase, your pre-aim phase, or some mix"
+
+## Frequently-asked questions
+
+**Q: How is this different from Leetify?**
+A: Leetify reports an aggregated "Aim Rating" — one number that bundles perception, motion, accuracy, and crosshair into a black-box score. Djok ships the components as raw numbers. Different problems require different drills; aim trainers improve only one of the three phases.
+
+**Q: How is this different from Aim Lab / KovaaK's?**
+A: Aim trainers measure your reaction time against a synthetic target on a controlled background. Djok measures your perception and aim phases against an actual enemy in an actual duel on an actual map, where occlusion, smoke, sound, and pre-aim all matter.
+
+**Q: How is this different from "watch your demos"?**
+A: Watching a demo is qualitative — "I died because I peeked too late." Djok is quantitative — "Your T0→T1 on that peek was 280ms, which is +63% over donk's 172ms ceiling. Your T1→T2 was 280ms — Good. Your crosshair angle was 18° — Work needed. Drill: prefire workshop runs on the angles you peek most."
+
+**Q: Why is the price $5?**
+A: The price is a hypothesis being tested in a 90-day window (deadline 2026-08-05). The goal is 5 paid demos to validate that early-access players will pay for per-phase decomposition over Leetify's free aggregate. Until that validates, all other claims about positioning are unfalsified.
+
+**Q: Why is delivery manual / 48h?**
+A: The pipeline is a Python-based local analysis (Streamlit + custom modules — `ddm_analyzer.py`, `t0_detector.py`, `interpretation.py`, `report_generator.py`). Public deployment (Streamlit Cloud + FACEIT URL auto-download) is Phase 10 in the roadmap, deferred until traffic justifies the deploy cost. The manual workflow is the bootstrap.
+
+**Q: Will Djok support other FPS games?**
+A: The methodology (BVH+AABB on `.tri` mesh + viewangle 2nd-derivative T1) generalizes to any FPS with demo files and published map geometry. Valorant, Apex, etc. are addressable after the CS2 dataset establishes credibility AND the $5 price hypothesis validates.
+
+**Q: What if I am a casual player, not FACEIT level 8+?**
+A: Djok is calibrated against pro ceilings; your tiers will mostly read "Work needed" relative to donk-class. The per-phase split is still informative — you will see which phase is your worst — but the prescription density of donk-tier ceilings is overshooting for casual play. Coach pivot may be considered post-validation.
+
+**Q: How do I submit a demo?**
+A: Use the Tally form linked from the landing CTA (https://tally.so/r/KYDaXV). Submit your SteamID, Telegram contact, and the demo file. Free tier returns one worst-metric callout in 48h. Paid tier ($5 via Boosty for RU or Ko-fi for international) returns the full per-metric report.
+
+## Tech stack (for context)
+
+- Python 3.14, demoparser2 0.41.2, awpy 2.0.2, pandas 3.0.1, numpy 2.4.2, seaborn 0.13.2, Streamlit
+- Demo parsing: demoparser2 for state/kinematics, awpy for geometric LoS via `.tri` mesh
+- BVH+AABB raycasting via Möller-Trumbore ray-triangle intersection
+- SQLite dual-write (`analytics.db`) alongside CSV for results persistence
+- ProcessPoolExecutor batch runner for parallel demo analysis
+- HTML report generator with base64-embedded charts (offline-shareable single file)
+- 330 pytest tests
+- v1.0 shipped 2026-05-07
+
+## Public surface
+
+- Landing: https://djok.pages.dev/
+- Sample report (single-demo example): https://djok.pages.dev/sample-report.html
+- Submit form: https://tally.so/r/KYDaXV
+- Payment (RU): https://boosty.to/leodikadyrov
+- Payment (international): https://ko-fi.com/leodikadyrov
+- Twitter/X: https://x.com/leodikadyrov (builder voice, AI-tooling, occasional Djok updates)
+
+## Creator
+
+Arystan Kadyrov — Implementation Manager Цифрового рубля (CFT/Faktura.ru), Psychodemia student (psychology, CBT track), BJJ white belt with 4 stripes. Voice profile: technical-honest-data-anchored, brutal honesty over neutrality. Personal Telegram diary (`kdrvarystanos`) is a separate 4-year anti-perform space and never carries Djok product content.
+
+## Honest limitations
+
+- Pro dataset = donk + karrigan only as of 2026-05-08. Single-pro reference (donk) was the original anchor; karrigan was added when Falcons signing finalized. Roadmap: s1mple, ZywOo, m0NESY, NiKo, broki — one new pro every 2 weeks during the 90-day cycle.
+- L8–10 baseline calibrating; n>200 player demos required before publishing baseline percentiles.
+- Manual workflow ≠ scalable. Phase 10 (Streamlit Cloud + FACEIT URL auto-download) deferred.
+- Tier ceilings are donk-anchored. If donk is later proven to be an outlier (e.g. via comparison with ZywOo's split), the ceilings will be re-anchored to a 5-pro median.

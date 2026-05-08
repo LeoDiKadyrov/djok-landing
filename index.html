@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Djok — CS2 Reaction Time Analysis (T0→T1 / T1→T2 / crosshair-angle decomposition)</title>
+  <meta name="description" content="Djok decomposes every CS2 duel into perception (T0→T1), aim (T1→T2), and pre-aim (crosshair angle), measured on real FACEIT demos with BVH+AABB raycasting. donk peek T0→T1 = 172ms (n=448). Compare your split to pros, get one drill prescription per metric.">
+  <meta name="keywords" content="CS2 reaction time, FACEIT aim analysis, donk reaction time, peek reaction time CS2, crosshair placement analysis, CS2 demo analysis, prefire vs reaction, peeker's advantage, aim duel review">
+  <meta name="author" content="Arystan Kadyrov">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0e0e12">
+  <link rel="canonical" href="https://djok.pages.dev/">
+
+  <!-- Open Graph (Telegram / Facebook / LinkedIn preview) -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://djok.pages.dev/">
+  <meta property="og:title" content="Djok — CS2 Reaction Time Analysis">
+  <meta property="og:description" content="Decomposes every CS2 duel into T0→T1 (perception), T1→T2 (aim), crosshair angle. donk peek = 172ms (n=448 FACEIT). Real match analysis, not bot drills.">
+  <meta property="og:image" content="https://djok.pages.dev/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="ru_RU">
+  <meta property="og:site_name" content="Djok">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Djok — CS2 Reaction Time Analysis">
+  <meta name="twitter:description" content="T0→T1 / T1→T2 / crosshair-angle decomposition. donk peek = 172ms (n=448 FACEIT). Real match data, not bot drills.">
+  <meta name="twitter:image" content="https://djok.pages.dev/og-image.png">
+
+  <!-- JSON-LD SoftwareApplication schema (SEO + AI agents) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Djok",
+    "alternateName": "Djok CS2 Reaction Analysis",
+    "applicationCategory": "GameAnalyticsApplication",
+    "operatingSystem": "Web (manual analysis pipeline)",
+    "description": "Djok decomposes every CS2 duel into three reaction phases — T0→T1 (perception, time from enemy first geometrically visible to aim-start), T1→T2 (aim, aim-start to first hit), and crosshair angle at T0 (pre-aim accuracy). Measured on real FACEIT demo files using BVH+AABB raycasting on .tri map mesh and viewangle second-derivative spike for aim-start. Each metric is tier-classified against fixed pro ceilings (donk-class) — Elite / Good / Average / Work needed — and paired with one drill prescription per worst metric. Pro reference: donk peek T0→T1 = 172ms median across 448 FACEIT peeks. karrigan = 203ms across 224 peeks.",
+    "offers": [
+      { "@type": "Offer", "name": "Free tier card", "price": "0", "priceCurrency": "USD", "description": "1 demo per submission, worst-metric callout, one drill prescription." },
+      { "@type": "Offer", "name": "Full report", "price": "5", "priceCurrency": "USD", "description": "Up to 20 demos per order, drill prescription per metric, peek/hold split, crosshair angle, side-by-side pro benchmarks, downloadable HTML report." }
+    ],
+    "creator": { "@type": "Person", "name": "Arystan Kadyrov" },
+    "keywords": "CS2, FACEIT, reaction time, T0, T1, T2, crosshair angle, BVH, AABB, viewangle, demo analysis, donk, karrigan, peeker advantage, prefire",
+    "inLanguage": ["en", "ru"]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Cloudflare Web Analytics — replace TOKEN_HERE with your beacon token after CF Pages deploy.
+       Uncomment the script tag below once token is filled in. Free, no cookie banner needed.
+       Setup: Cloudflare dashboard → Analytics & Logs → Web Analytics → Add a site → copy beacon token.
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "TOKEN_HERE"}'></script>
+  -->
+</head>
+<body>
+
+<!-- LANG TOGGLE -->
+<nav class="lang-switch" aria-label="Language">
+  <button id="btn-en" class="lang-btn active" aria-pressed="true" onclick="setLang('en')">EN</button>
+  <button id="btn-ru" class="lang-btn" aria-pressed="false" onclick="setLang('ru')">RU</button>
+</nav>
+
+<main>
+<!-- PRE-ALPHA BANNER -->
+<div class="alpha-banner">
+  <div class="container">
+    <span class="badge badge-soon">Pre-Alpha</span>
+    <span data-lang="en">Early Access — tool is functional but actively evolving. Reports are delivered manually within 48h.</span>
+    <span data-lang="ru" style="display:none">Ранний доступ — инструмент работает и активно развивается. Отчёты доставляются вручную в течение 48ч.</span>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <p class="label">
+      <span data-lang="en">Djok — CS2 Demo Analysis</span>
+      <span data-lang="ru" style="display:none">Djok — Анализ CS2 демо</span>
+    </p>
+    <h1>
+      <span data-lang="en">You train aim every day.<br><span>But you don't know your real gap to a pro.</span></span>
+      <span data-lang="ru" style="display:none">Ты тренируешь аим каждый день.<br><span>Но ты не знаешь свой реальный разрыв с PRO.</span></span>
+    </h1>
+    <p class="sub">
+      <span data-lang="en">Every duel has two phases: how long it takes to <em>notice</em> the enemy, and how long to <em>hit</em> them after. Aim Lab measures drills. Djok measures your real matches — and shows exactly which phase is costing you.</span>
+      <span data-lang="ru" style="display:none">У каждой дуэли две фазы: сколько времени нужно, чтобы <em>заметить</em> врага, и сколько — чтобы <em>попасть</em>. Aim Lab измеряет дриллы. Djok измеряет твои реальные матчи — и показывает, на какой фазе ты теряешь время.</span>
+    </p>
+    <a class="btn-primary" href="https://tally.so/r/KYDaXV" target="_blank" rel="noopener noreferrer"
+       data-aria-en="Submit demo for free tier card via Tally form"
+       data-aria-ru="Отправить демо для бесплатной tier-карточки через форму Tally">
+      <span data-lang="en">SUBMIT_FREE_DEMO</span>
+      <span data-lang="ru" style="display:none">ОТПРАВИТЬ_БЕСПЛАТНО</span>
+    </a>
+    <span class="cta-note">
+      <span data-lang="en">Free tier card via Telegram in 48h. $5 unlocks the full report &mdash; see options below.</span>
+      <span data-lang="ru" style="display:none">Бесплатная карточка в Telegram за 48ч. $5 открывает полный отчёт &mdash; варианты ниже.</span>
+    </span>
+  </div>
+</section>
+
+<!-- SAMPLE OUTPUT -->
+<section id="sample">
+  <div class="container">
+    <p class="label">
+      <span data-lang="en">Real Data</span>
+      <span data-lang="ru" style="display:none">Реальные данные</span>
+    </p>
+    <h2>
+      <span data-lang="en">What the analysis looks like</span>
+      <span data-lang="ru" style="display:none">Как выглядит анализ</span>
+    </h2>
+    <p>
+      <span data-lang="en">Every engagement splits into <strong class="emph-text">T0&rarr;T1</strong> (enemy visible &rarr; aim starts) and <strong class="emph-text">T1&rarr;T2</strong> (aim start &rarr; first hit). Each metric gets a tier — <strong class="emph-text">Elite</strong> / <strong class="emph-text">Good</strong> / <strong class="emph-text">Average</strong> / <strong class="emph-text">Work needed</strong> — against fixed pro ceilings (donk-class), not relative percentiles. Donk hits Elite. You learn exactly which one metric is costing you the most, and one drill that addresses it. Below: median values for donk, shoke (Cybershoke founder), and strogo (WW Team streamer), peek engagements only.</span>
+      <span data-lang="ru" style="display:none">Каждая дуэль делится на <strong class="emph-text">T0&rarr;T1</strong> (враг виден &rarr; прицел начал двигаться) и <strong class="emph-text">T1&rarr;T2</strong> (начало прицеливания &rarr; первое попадание). Каждая метрика получает тир — <strong class="emph-text">Elite</strong> / <strong class="emph-text">Good</strong> / <strong class="emph-text">Average</strong> / <strong class="emph-text">Work needed</strong> — против фиксированных pro-потолков (уровень donk), а не относительных процентилей. Донк = Elite. Ты узнаёшь точно, какая одна метрика тебе мешает больше всего, и один drill, который её закрывает. Ниже: медианные значения для donk, shoke (основатель Cybershoke) и strogo (стример WW Team), только пик-дуэли.</span>
+    </p>
+
+    <div class="raw-data-snippet">
+<span class="csv-header">id,match_id,map_name,moment_timestamp,engagement_type,rt_visible_to_aim_ms,rt_aim_to_hit_ms,rt_visible_to_hit_ms,player_velocity_at_t0_ups,enemy_velocity_at_t0_ups,crosshair_angle_at_t0_deg</span>
+<span class="csv-data">0,spirit-vs-furia-m2-dust2,de_dust2,1:40,peek,<span class="csv-hl">125</span>,1359.375,<span class="csv-hl">1484.375</span>,233.9,0,2.4</span>
+<span class="csv-data">1,spirit-vs-furia-m2-dust2,de_dust2,6:56,peek,<span class="csv-hl">593.75</span>,1093.75,<span class="csv-hl">1687.5</span>,216,3.9,1.8</span>
+    </div>
+
+    <div class="stat-hero">
+      <div class="number"><em>172ms</em></div>
+      <div class="stat-hero-label">
+        <span data-lang="en">donk — median time from enemy visibility to aim start (T0&rarr;T1) · n=448 peek</span>
+        <span data-lang="ru" style="display:none">donk — медиана времени от появления врага до начала прицеливания (T0&rarr;T1) · n=448 пиков</span>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="number-sm"><em>+94ms</em></div>
+        <div class="desc">
+          <span data-lang="en">strogo is 94ms slower to start aiming than donk</span>
+          <span data-lang="ru" style="display:none">strogo начинает целиться на 94мс медленнее donk</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="number-sm"><em>57%</em></div>
+        <div class="desc">
+          <span data-lang="en">of donk's peeks: aim starts within 125-200ms of enemy visibility</span>
+          <span data-lang="ru" style="display:none">пиков donk: прицел начинает двигаться в окне 125-200мс от появления врага</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="receive-note">
+      <span data-lang="en">You receive a <strong class="emph-text">downloadable HTML report</strong> — offline, brand-styled, shareable. Top of report: <strong class="emph-text">your worst metric</strong> with the gap vs donk and the specific drill to close it. Below: full tier table for every metric, distribution charts, and raw per-engagement data.</span>
+      <span data-lang="ru" style="display:none">Ты получаешь <strong class="emph-text">скачиваемый HTML-отчёт</strong> — offline, в брендовом стиле, можно делиться. Сверху отчёта: <strong class="emph-text">твоя самая слабая метрика</strong> с gap'ом до donk'а и конкретный drill, который её закрывает. Ниже: полная tier-таблица по всем метрикам, графики распределений, raw-данные по каждой дуэли.</span>
+    </p>
+
+    <div class="sample-report-frame">
+      <iframe src="sample-report.html" title="Sample Djok Report" loading="lazy" class="sample-report-iframe"></iframe>
+    </div>
+    <p class="chart-caption sample-report-cta">
+      <span data-lang="en">Real sample report (donk · n=349 engagements). Scroll inside the frame to preview, or open full-size:</span>
+      <span data-lang="ru" style="display:none">Реальный sample-отчёт (donk · n=349 дуэлей). Прокрути внутри рамки или открой в полный размер:</span>
+      <a href="sample-report.html" target="_blank" rel="noopener noreferrer" class="cta-pay-link">
+        <span data-lang="en">open sample-report.html ↗</span>
+        <span data-lang="ru" style="display:none">открыть sample-report.html ↗</span>
+      </a>
+    </p>
+
+    <div class="chart-wrap">
+      <div style="height: 280px; position: relative;">
+        <canvas id="stackedChart" role="img" aria-label="Stacked bar chart showing perception and execution times for donk, shoke, and strogo">
+          donk: 172ms perception + 312ms execution. shoke: 234ms + 328ms. strogo: 266ms + 313ms.
+        </canvas>
+      </div>
+    </div>
+    <p class="chart-caption">
+      <span data-lang="en">Stacked median duel time (ms). Peek engagements, clean &le;2000ms. Your bar would appear here after analysis.</span>
+      <span data-lang="ru" style="display:none">Медиана времени дуэли (мс). Пик-дуэли, &le;2000мс. Твой столбик появится здесь после анализа.</span>
+    </p>
+
+    <div class="chart-wrap">
+      <div style="height: 200px; position: relative;">
+        <canvas id="angleChart" role="img" aria-label="Bar chart showing median crosshair angle at T0 for donk, shoke, and strogo">
+          donk: 5.2&deg;. shoke: 3.3&deg;. strogo: 6.9&deg;.
+        </canvas>
+      </div>
+    </div>
+    <p class="chart-caption">
+      <span data-lang="en">Median crosshair angle at T0 (&deg;) — how many degrees away from the enemy your crosshair was the moment they became visible. Lower = better pre-aim placement.</span>
+      <span data-lang="ru" style="display:none">Медиана угла прицела при T0 (&deg;) — на сколько градусов был смещён прицел от врага в момент его появления. Меньше = лучше.</span>
+    </p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="container">
+    <p class="label">
+      <span data-lang="en">Process</span>
+      <span data-lang="ru" style="display:none">Процесс</span>
+    </p>
+    <h2>
+      <span data-lang="en">How it works</span>
+      <span data-lang="ru" style="display:none">Как это работает</span>
+    </h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>
+            <span data-lang="en">Send your demo</span>
+            <span data-lang="ru" style="display:none">Отправь демо</span>
+          </h3>
+          <p>
+            <span data-lang="en">Fill in the submission form: paste your FACEIT demo URLs, your SteamID64 or in-game name, and your email. Pay via <a href="https://ko-fi.com/leodikadyrov" target="_blank" rel="noopener noreferrer" class="cta-pay-link">ko-fi</a> (international) or <a href="https://boosty.to/leodikadyrov" target="_blank" rel="noopener noreferrer" class="cta-pay-link">Boosty</a> (RU cards).</span>
+            <span data-lang="ru" style="display:none">Заполни форму: вставь ссылки на FACEIT-демо, укажи SteamID64 или ник в игре и email. Оплати через <a href="https://boosty.to/leodikadyrov" target="_blank" rel="noopener noreferrer" class="cta-pay-link">Boosty</a> (RU карты) или <a href="https://ko-fi.com/leodikadyrov" target="_blank" rel="noopener noreferrer" class="cta-pay-link">ko-fi</a> (международно).</span>
+          </p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>
+            <span data-lang="en">Geometric analysis runs</span>
+            <span data-lang="ru" style="display:none">Запускается геометрический анализ</span>
+          </h3>
+          <p>
+            <span data-lang="en">The pipeline scans every tick of your demo against the map's 3D geometry to find the exact moment each enemy crossed your line of sight. No video review — the data comes directly from the demo file.</span>
+            <span data-lang="ru" style="display:none">Пайплайн сканирует каждый тик демо по 3D-геометрии карты, чтобы найти точный момент появления каждого врага в зоне видимости. Никакого просмотра видео — данные берутся напрямую из демо-файла.</span>
+          </p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3>
+            <span data-lang="en">You get a full breakdown</span>
+            <span data-lang="ru" style="display:none">Получаешь полный разбор</span>
+          </h3>
+          <p>
+            <span data-lang="en">Every duel in the demo: T0&rarr;T1 (perception) and T1&rarr;T2 (execution), compared to pro benchmarks. With a plain-language note on whether your bottleneck is recognition speed or aim execution.</span>
+            <span data-lang="ru" style="display:none">Каждая дуэль: T0&rarr;T1 (восприятие) и T1&rarr;T2 (исполнение), в сравнении с про-бенчмарками. С понятным выводом — где узкое место: скорость распознавания или исполнение.</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="container">
+    <p class="label">
+      <span data-lang="en">Pricing</span>
+      <span data-lang="ru" style="display:none">Цена</span>
+    </p>
+    <h2>
+      <span data-lang="en">Free preview, $5 full report</span>
+      <span data-lang="ru" style="display:none">Бесплатное превью, $5 за полный отчёт</span>
+    </h2>
+    <div class="price-terminal">
+      <div class="price-header">
+        <span data-lang="en">DJOK_FREE_TIER</span>
+        <span data-lang="ru" style="display:none">DJOK_БЕСПЛАТНЫЙ_ТИР</span>
+        <span class="price-amount">$0.00</span>
+      </div>
+      <ul class="price-terminal-list">
+        <li><span data-lang="en">1 demo per submission, free tier card</span><span data-lang="ru" style="display:none">1 демо за отправку, бесплатная карточка</span></li>
+        <li><span data-lang="en">Per-metric tier — Elite / Good / Average / Work needed</span><span data-lang="ru" style="display:none">Тир каждой метрики — Elite / Good / Average / Work needed</span></li>
+        <li><span data-lang="en">Worst-metric callout: which one gap costs you the most</span><span data-lang="ru" style="display:none">Карточка худшей метрики: какой gap стоит больше всего</span></li>
+        <li><span data-lang="en">One drill prescription for the worst metric</span><span data-lang="ru" style="display:none">Один drill для самой слабой метрики</span></li>
+        <li><span data-lang="en">Delivered to your Telegram within 48h</span><span data-lang="ru" style="display:none">Доставка в Telegram в течение 48ч</span></li>
+      </ul>
+      <div class="price-terminal-early">
+        <span data-lang="en">> TRY_BEFORE_PAY · no signup, just submit a demo</span>
+        <span data-lang="ru" style="display:none">> ПОПРОБУЙ_ДО_ОПЛАТЫ · без регистрации, просто отправь демо</span>
+        <br>
+        <span data-lang="en">- Upgrade locked at $5 forever</span>
+        <span data-lang="ru" style="display:none">- Цена апгрейда зафиксирована $5 навсегда</span>
+        <br>
+        <span data-lang="en">- Pay only if free card shows you something worth knowing</span>
+        <span data-lang="ru" style="display:none">- Платишь только если бесплатная карточка показала что-то полезное</span>
+      </div>
+      <div class="price-terminal-action">
+        <a class="btn-primary" href="https://tally.so/r/KYDaXV" target="_blank" rel="noopener noreferrer"
+           data-aria-en="Submit demo for free tier card via Tally form"
+           data-aria-ru="Отправить демо для бесплатной tier-карточки через форму Tally">
+          <span data-lang="en">SUBMIT_FREE_DEMO</span>
+          <span data-lang="ru" style="display:none">ОТПРАВИТЬ_БЕСПЛАТНО</span>
+        </a>
+      </div>
+    </div>
+    <div class="price-terminal">
+      <div class="price-header">
+        <span data-lang="en">DJOK_FULL_REPORT</span>
+        <span data-lang="ru" style="display:none">DJOK_ПОЛНЫЙ_ОТЧЁТ</span>
+        <span class="price-amount">$5.00</span>
+      </div>
+      <p class="price-terminal-includes">
+        <span data-lang="en">&gt; Everything in DJOK_FREE_TIER, plus:</span>
+        <span data-lang="ru" style="display:none">&gt; Всё из DJOK_БЕСПЛАТНЫЙ_ТИР, плюс:</span>
+      </p>
+      <ul class="price-terminal-list">
+        <li><span data-lang="en">Up to 20 demos per $5 order (vs 1 demo)</span><span data-lang="ru" style="display:none">До 20 демо за один $5 заказ (vs 1 демо)</span></li>
+        <li><span data-lang="en">Pro-ceiling tier thresholds — calibrated against donk-class, not relative</span><span data-lang="ru" style="display:none">Тир-пороги по pro-потолкам — калибровка по уровню donk, не относительная</span></li>
+        <li><span data-lang="en">Drill prescription for every metric (free shows worst only)</span><span data-lang="ru" style="display:none">Drill для каждой метрики (бесплатная показывает только худшую)</span></li>
+        <li><span data-lang="en">T0&rarr;T1 (perception) and T1&rarr;T2 (execution) split — peek and hold separated</span><span data-lang="ru" style="display:none">T0&rarr;T1 (восприятие) и T1&rarr;T2 (исполнение) — пик и hold разделены</span></li>
+        <li><span data-lang="en">Crosshair placement angle at T0 — degrees off-target on first visibility</span><span data-lang="ru" style="display:none">Угол прицела при T0 — градусы смещения от врага в момент появления</span></li>
+        <li><span data-lang="en">Side-by-side vs donk + Spirit-team benchmark dataset</span><span data-lang="ru" style="display:none">Side-by-side с donk + бенчмарки Spirit-команды</span></li>
+        <li><span data-lang="en">Downloadable HTML report — offline, brand-styled, shareable</span><span data-lang="ru" style="display:none">Скачиваемый HTML-отчёт — offline, брендовый, можно делиться</span></li>
+      </ul>
+      <div class="price-terminal-early">
+        <span data-lang="en">> EARLY_ACCESS_PERKS applied · offer ends when public web app launches</span>
+        <span data-lang="ru" style="display:none">> ПРИВИЛЕГИИ_РАННЕГО_ДОСТУПА применены · предложение действует до запуска веб-приложения</span>
+        <br>
+        <span data-lang="en">- Free re-analysis when opponent identity ships</span>
+        <span data-lang="ru" style="display:none">- Бесплатный перезапуск при добавлении анализа по противникам</span>
+        <br>
+        <span data-lang="en">- Price locked forever (regular $15+)</span>
+        <span data-lang="ru" style="display:none">- Цена зафиксирована навсегда (обычная $15+)</span>
+      </div>
+      <div class="price-terminal-action">
+        <a class="btn-primary" href="https://boosty.to/leodikadyrov" target="_blank" rel="noopener noreferrer"
+           data-aria-en="Pay $5 via Boosty — Russian cards"
+           data-aria-ru="Оплатить $5 через Boosty — карты РФ">
+          <span data-lang="en">PAY_BOOSTY_RU</span>
+          <span data-lang="ru" style="display:none">ОПЛАТИТЬ_BOOSTY</span>
+        </a>
+        <a class="btn-primary" href="https://ko-fi.com/leodikadyrov" target="_blank" rel="noopener noreferrer"
+           data-aria-en="Pay $5 via ko-fi — international cards"
+           data-aria-ru="Оплатить $5 через ko-fi — международные карты">
+          <span data-lang="en">PAY_KOFI_INTL</span>
+          <span data-lang="ru" style="display:none">ОПЛАТИТЬ_KOFI</span>
+        </a>
+      </div>
+      <p class="price-terminal-note">
+        <span data-lang="en">After payment: send screenshot + your demo SteamID to <a href="https://t.me/puchar" target="_blank" rel="noopener noreferrer" class="cta-pay-link">@puchar</a> on Telegram. HTML report within 48h.</span>
+        <span data-lang="ru" style="display:none">После оплаты: отправь скриншот + SteamID демки в Telegram <a href="https://t.me/puchar" target="_blank" rel="noopener noreferrer" class="cta-pay-link">@puchar</a>. HTML-отчёт в течение 48ч.</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="container">
+    <p class="label">
+      <span data-lang="en">What's coming</span>
+      <span data-lang="ru" style="display:none">Планы</span>
+    </p>
+    <h2>Roadmap</h2>
+    <ul class="roadmap-list">
+      <li>
+        <span class="badge badge-done">Done</span>
+        <span data-lang="en">BVH geometric T0 detection from real map meshes</span>
+        <span data-lang="ru" style="display:none">BVH геометрическое определение T0 по реальным мешам карт</span>
+      </li>
+      <li>
+        <span class="badge badge-done">Done</span>
+        <span data-lang="en">T0&rarr;T1 / T1&rarr;T2 decomposition with pro benchmarks (donk, shoke, strogo)</span>
+        <span data-lang="ru" style="display:none">Декомпозиция T0&rarr;T1 / T1&rarr;T2 с про-бенчмарками (donk, shoke, strogo)</span>
+      </li>
+      <li>
+        <span class="badge badge-done">Done</span>
+        <span data-lang="en">Crosshair placement angle at T0 — positioning vs reaction gap diagnosis</span>
+        <span data-lang="ru" style="display:none">Угол прицела при T0 — диагностика позиционирования vs скорости реакции</span>
+      </li>
+      <li>
+        <span class="badge badge-done">Done</span>
+        <span data-lang="en">Weapons filter — separates AWP, rifle, pistol engagements</span>
+        <span data-lang="ru" style="display:none">Фильтр по оружию — разделяет AWP, винтовки, пистолеты</span>
+      </li>
+      <li>
+        <span class="badge badge-done">Done</span>
+        <span data-lang="en">Peek vs hold separation — running peeks and stationary holds reported separately, never conflated</span>
+        <span data-lang="ru" style="display:none">Разделение peek vs hold — пики на бегу и hold со статичных углов считаются отдельно, никогда не смешиваются</span>
+      </li>
+      <li>
+        <span class="badge badge-done">Done</span>
+        <span data-lang="en">Tier classification (Elite / Good / Average / Work needed) against fixed pro ceilings</span>
+        <span data-lang="ru" style="display:none">Tier-классификация (Elite / Good / Average / Work needed) против фиксированных pro-потолков</span>
+      </li>
+      <li>
+        <span class="badge badge-done">Done</span>
+        <span data-lang="en">Worst-metric coaching card — single specific drill prescription per report</span>
+        <span data-lang="ru" style="display:none">Карточка худшей метрики — один конкретный drill в каждом отчёте</span>
+      </li>
+      <li>
+        <span class="badge badge-done">Done</span>
+        <span data-lang="en">Quality gates — overlapping window + teammate phantom kill + outlier T2 cap (≤1.5s)</span>
+        <span data-lang="ru" style="display:none">Quality gates — пересекающиеся окна + teammate phantom kill + cap T2 (≤1.5с)</span>
+      </li>
+      <li>
+        <span class="badge badge-done">Done</span>
+        <span data-lang="en">Downloadable HTML report — offline, brand-styled, shareable</span>
+        <span data-lang="ru" style="display:none">Скачиваемый HTML-отчёт — offline, в брендовом стиле, можно делиться</span>
+      </li>
+      <li>
+        <span class="badge badge-done">Done</span>
+        <span data-lang="en">Batch pipeline — 100+ FACEIT demos processed in under 1h</span>
+        <span data-lang="ru" style="display:none">Batch-пайплайн — 100+ FACEIT демо в час</span>
+      </li>
+      <li>
+        <span class="badge badge-soon">Next</span>
+        <span data-lang="en">Opponent identity analysis — RT breakdown per opponent (who do you struggle against?)</span>
+        <span data-lang="ru" style="display:none">Анализ по противникам — против кого реагируешь быстрее / медленнее?</span>
+      </li>
+      <li>
+        <span class="badge badge-planned">Planned</span>
+        <span data-lang="en">Map position heatmap — where on the map do you react fastest / slowest?</span>
+        <span data-lang="ru" style="display:none">Тепловая карта позиций — где на карте реакция лучше и хуже?</span>
+      </li>
+      <li>
+        <span class="badge badge-planned">Planned</span>
+        <span data-lang="en">Integrated submission form — no email needed, submit demo directly on the site</span>
+        <span data-lang="ru" style="display:none">Встроенная форма заявки — без email, отправь демо прямо на сайте</span>
+      </li>
+      <li>
+        <span class="badge badge-done">Done</span>
+        <span data-lang="en">Public offer agreement / Terms of Service</span>
+        <span data-lang="ru" style="display:none">Публичная оферта / Условия использования</span>
+      </li>
+      <li>
+        <span class="badge badge-planned">Planned</span>
+        <span data-lang="en">Public web app — upload demo yourself, get report instantly · backend works locally, public deploy pending</span>
+        <span data-lang="ru" style="display:none">Публичное веб-приложение — загрузи демо сам, получи отчёт мгновенно · бэкенд работает локально, осталось деплой</span>
+      </li>
+      <li>
+        <span class="badge badge-planned">Planned</span>
+        <span data-lang="en">FACEIT match URL auto-download — paste URL instead of demo file</span>
+        <span data-lang="ru" style="display:none">Автозагрузка FACEIT match по URL — вставь URL вместо демо</span>
+      </li>
+      <li>
+        <span class="badge badge-planned">Planned</span>
+        <span data-lang="en">Valorant support (same methodology, different map geometry)</span>
+        <span data-lang="ru" style="display:none">Поддержка Valorant (та же методология, другая геометрия карт)</span>
+      </li>
+      <li>
+        <span class="badge badge-done">Done</span>
+        <span data-lang="en">Payment via Boosty (RU cards) and ko-fi (international) — one-click checkout</span>
+        <span data-lang="ru" style="display:none">Оплата через Boosty (RU карты) и ko-fi (международно) — оплата в один клик</span>
+      </li>
+      <li>
+        <span class="badge badge-planned">Planned</span>
+        <span data-lang="en">Stripe + USDT crypto for additional payment options</span>
+        <span data-lang="ru" style="display:none">Stripe + USDT крипта как дополнительные способы оплаты</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="container">
+    <p class="label">FAQ</p>
+    <h2>
+      <span data-lang="en">Questions</span>
+      <span data-lang="ru" style="display:none">Вопросы</span>
+    </h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <h3>
+          <span data-lang="en">What do I need to send?</span>
+          <span data-lang="ru" style="display:none">Что нужно отправить?</span>
+        </h3>
+        <p>
+          <span data-lang="en">A FACEIT demo link or a .dem file. Your SteamID64 or in-game name, and your email for delivery.</span>
+          <span data-lang="ru" style="display:none">Ссылку на FACEIT-демо или .dem файл. SteamID64 или ник в игре, и email для доставки.</span>
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>
+          <span data-lang="en">How is this different from Leetify?</span>
+          <span data-lang="ru" style="display:none">Чем это отличается от Leetify?</span>
+        </h3>
+        <p>
+          <span data-lang="en">Leetify gives aggregate ratings. Djok measures the exact millisecond your reaction started — geometrically, from the demo — and tells you if you're slow at noticing or slow at hitting. Different question, different method.</span>
+          <span data-lang="ru" style="display:none">Leetify даёт агрегированные рейтинги. Djok измеряет точную миллисекунду начала реакции — геометрически, из демо — и говорит, где ты медлишь: в восприятии или в исполнении. Разный вопрос, разный метод.</span>
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>
+          <span data-lang="en">What maps are supported?</span>
+          <span data-lang="ru" style="display:none">Какие карты поддерживаются?</span>
+        </h3>
+        <p>
+          <span data-lang="en">All current Active Duty maps: Anubis, Ancient, Dust 2, Inferno, Mirage, Nuke, Overpass. If your demo is on a different map, contact me before buying.</span>
+          <span data-lang="ru" style="display:none">Все текущие Active Duty карты: Anubis, Ancient, Dust 2, Inferno, Mirage, Nuke, Overpass. Если нужна другая карта — напиши перед покупкой.</span>
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>
+          <span data-lang="en">What does "pre-alpha" mean for me?</span>
+          <span data-lang="ru" style="display:none">Что значит «пре-альфа» для меня?</span>
+        </h3>
+        <p>
+          <span data-lang="en">The analysis pipeline works and produces real data. "Pre-alpha" means the report format is still evolving — early customers help shape what goes in it. You're buying a useful tool, not a beta experiment.</span>
+          <span data-lang="ru" style="display:none">Пайплайн анализа работает и даёт реальные данные. «Пре-альфа» означает, что формат отчёта ещё развивается — ранние покупатели помогают его формировать. Это рабочий инструмент, а не эксперимент.</span>
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>
+          <span data-lang="en">What's the refund policy?</span>
+          <span data-lang="ru" style="display:none">Какая политика возврата?</span>
+        </h3>
+        <p>
+          <span data-lang="en">If the analysis fails due to a technical issue on my end — full refund. The data is real and objective; no refund for results you didn't expect. Full terms of service coming soon.</span>
+          <span data-lang="ru" style="display:none">Если анализ не получился по технической причине — полный возврат. Данные реальны и объективны; возврат за «неожиданные результаты» не предусмотрен. Публичная оферта в разработке.</span>
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>
+          <span data-lang="en">Can I submit multiple demos?</span>
+          <span data-lang="ru" style="display:none">Можно ли отправить несколько демо?</span>
+        </h3>
+        <p>
+          <span data-lang="en">One purchase covers up to 20 demos. Buy again for additional batches. Early access pricing applies to all purchases while it lasts.</span>
+          <span data-lang="ru" style="display:none">Одна покупка — до 20 демо. Для дополнительного пакета — купи снова. Цена раннего доступа действует пока действует.</span>
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>
+          <span data-lang="en">Hey Shoke, Cybershoke focuses on stats — want to work together?</span>
+          <span data-lang="ru" style="display:none">Шок, cybershoke фокусируется на статистике — поработаем вместе?</span>
+        </h3>
+        <p>
+          <span data-lang="en">In 2026, Cybershoke's main focus is player statistics. You give people K/D and ADR. We give them the exact millisecond their brain registered an enemy vs when their hand moved the mouse. Let's talk.</span>
+          <span data-lang="ru" style="display:none">В 2026 году главный фокус Cybershoke — это статистика игроков. Вы даёте людям K/D и ADR. Мы даём точную миллисекунду, когда их мозг заметил врага, и когда рука двинула мышку. Есть о чем поговорить.</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <p>
+      <span data-lang="en">Questions? Telegram: @puchar</span>
+      <span data-lang="ru" style="display:none">Вопросы? Telegram: @puchar</span>
+    </p>
+    <p class="footer-links">
+      <button class="footer-link-btn" onclick="openTerms()">
+        <span data-lang="en">Public Offer / Terms of Service</span>
+        <span data-lang="ru" style="display:none">Публичная оферта / Условия использования</span>
+      </button>
+    </p>
+  </div>
+</footer>
+
+<!-- TERMS MODAL -->
+<div id="terms-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="terms-title" hidden>
+  <div class="modal-box">
+    <div class="modal-header">
+      <span id="terms-title" class="modal-title">
+        <span data-lang="en">Public Offer Agreement</span>
+        <span data-lang="ru" style="display:none">Публичная оферта</span>
+      </span>
+      <button class="modal-close" onclick="closeTerms()" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- ENGLISH -->
+      <div data-lang="en">
+        <p class="terms-date">Effective date: April 2026 · Pre-Alpha version</p>
+
+        <h3>1. Parties</h3>
+        <p>This agreement is made between <strong>Arystan Kadyrov</strong> (individual, Kazakhstan) — hereinafter "Contractor" — and any person who purchases the service — hereinafter "Customer".</p>
+
+        <h3>2. Subject of the agreement</h3>
+        <p>The Contractor provides manual CS2 demo analysis: geometric computation of reaction time metrics (T0→T1 perception time, T1→T2 execution time, crosshair placement angle) from FACEIT or other CS2 demo files (.dem) submitted by the Customer. Analysis is performed using proprietary software developed by the Contractor, which internally relies on open-source libraries and tools. The software and its source code are closed and remain the exclusive property of the Contractor.</p>
+
+        <h3>3. Service scope</h3>
+        <p>One purchase covers analysis of <strong>up to 20 demo files</strong>. Each demo must be a valid CS2 GOTV demo (.dem). Supported maps: all current Active Duty maps (Anubis, Ancient, Dust 2, Inferno, Mirage, Nuke, Overpass). Contact Contractor before purchasing if your demo uses a different map.</p>
+
+        <h3>4. Price and payment</h3>
+        <p>The current price per batch (up to 20 demos) is indicated on the Contractor's website at the time of purchase. No subscription. No recurring charges. Payment is made via <a href="https://boosty.to/leodikadyrov" target="_blank" rel="noopener noreferrer" class="terms-link">Boosty</a> (Russian Federation cards) or <a href="https://ko-fi.com/leodikadyrov" target="_blank" rel="noopener noreferrer" class="terms-link">ko-fi</a> (international cards and PayPal). Payment processing is handled by the respective platform; the Contractor receives the net amount after platform fees.</p>
+
+        <h3>5. Delivery</h3>
+        <p>The Contractor delivers the analysis report to the Customer's email within <strong>48 hours</strong> of receiving the demo submission form. Report format: standalone HTML file (offline-readable, brand-styled, shareable) and/or structured data file (format may evolve during pre-alpha). Delivery time excludes weekends and force majeure.</p>
+
+        <h3>6. Customer obligations</h3>
+        <p>The Customer must: (a) provide a valid SteamID64 or in-game name; (b) submit a working FACEIT demo link or valid .dem file; (c) provide a reachable email address. The Customer confirms they have the right to share the demo file and that analysis of that demo does not violate any applicable terms of service.</p>
+
+        <h3>7. Refund policy</h3>
+        <p>Full refund is provided if: (a) the Contractor is unable to process the submitted demo due to a technical failure on the Contractor's side; or (b) the demo format is unsupported and was not disclosed before purchase. No refund is issued for results the Customer disagrees with — the data is computed objectively from the demo file. Refund requests must be submitted within 7 days of delivery to Contractor's Telegram or email.</p>
+
+        <h3>8. Early access conditions</h3>
+        <p><strong>Early access</strong> is a limited-time phase during which the service is available at a discounted price before the full web application launches. Early access is active while explicitly indicated on the Contractor's website. Customers who purchase during the early access period receive the following permanent privileges: (a) their purchase price is locked forever — the price for new customers will increase at web app launch, but early access buyers are not affected by any future price changes; (b) free re-analysis when opponent identity analysis and map position features ship, applied to the same demos submitted under this purchase. Customers who purchase after the early access period ends are subject to the current pricing indicated on the website at the time of their purchase.</p>
+
+        <h3>9. Limitation of liability</h3>
+        <p>The service is provided "as is" under pre-alpha status. The Contractor is not liable for indirect or consequential damages. Maximum liability is limited to the amount paid by the Customer. Results are analytical data — not coaching, not gameplay advice.</p>
+
+        <h3>10. Privacy & data collection</h3>
+        <p>The Contractor does not collect, store, or process any personal data beyond what is strictly necessary to deliver the service (SteamID64 or in-game name, email address for report delivery). Demo files are processed locally on the Contractor's hardware and deleted after analysis is complete. The website does not use cookies, tracking scripts, analytics, or any form of browser-side data collection. No data is sold or transferred to third parties.</p>
+        <p>With the Customer's explicit opt-in consent (provided at the demo submission stage), anonymized engagement metrics derived from the analysis (reaction times, crosshair angles, engagement timestamps — without SteamID, in-game name, email, or any personal identifiers) may be retained and used to improve the analysis software and expand the benchmark dataset. The Customer may withdraw this consent at any time by contacting the Contractor; upon withdrawal, the anonymized metrics will be deleted from the dataset. Without opt-in consent, no metrics are retained after report delivery.</p>
+
+        <h3>11. Acceptance & EU withdrawal waiver</h3>
+        <p>By completing payment, the Customer confirms they have read, understood, and agreed to this agreement in full. Customers in the European Union expressly request that the service commence immediately upon purchase and acknowledge that they thereby waive their right of withdrawal under EU Directive 2011/83/EU, to the extent that the service has been fully performed.</p>
+
+        <h3>12. Intellectual property</h3>
+        <p>Copyright © 2025 Arystan Kadyrov. All Rights Reserved. The analysis software, its source code, algorithms, and associated documentation are proprietary and confidential. Unauthorized copying, reproduction, distribution, modification, reverse engineering, or any other use of this software — in whole or in part, via any medium — is strictly prohibited without the express prior written permission of the copyright holder. For licensing inquiries: <a href="mailto:din02winchester25@gmail.com" class="terms-link">din02winchester25@gmail.com</a></p>
+
+        <h3>13. Governing law</h3>
+        <p>This agreement is governed by the laws of the Republic of Kazakhstan. Disputes are resolved through negotiation; if unresolved, by the competent courts of Kazakhstan.</p>
+
+        <p class="terms-contact">Contact: Telegram @puchar · <a href="mailto:din02winchester25@gmail.com" class="terms-link">din02winchester25@gmail.com</a></p>
+      </div>
+
+      <!-- RUSSIAN -->
+      <div data-lang="ru" style="display:none">
+        <p class="terms-date">Дата вступления в силу: апрель 2026 · Версия Pre-Alpha</p>
+
+        <h3>1. Стороны</h3>
+        <p>Настоящий договор заключается между <strong>Кадыровым Арыстаном</strong> (физическое лицо, Республика Казахстан) — далее «Исполнитель» — и любым лицом, оплатившим услугу — далее «Заказчик».</p>
+
+        <h3>2. Предмет договора</h3>
+        <p>Исполнитель оказывает услугу ручного анализа CS2 демо-файлов: геометрический расчёт метрик времени реакции (T0→T1 время восприятия, T1→T2 время исполнения, угол прицела в момент T0) из FACEIT или иных CS2 демо-файлов (.dem), предоставленных Заказчиком. Анализ производится с помощью проприетарного программного обеспечения, разработанного Исполнителем, которое внутренне использует открытые библиотеки и инструменты. Программное обеспечение и его исходный код закрыты и являются исключительной собственностью Исполнителя.</p>
+
+        <h3>3. Объём услуги</h3>
+        <p>Одна покупка включает анализ <strong>до 20 демо-файлов</strong>. Каждое демо должно быть корректным CS2 GOTV-файлом (.dem). Поддерживаемые карты: все текущие карты Active Duty (Anubis, Ancient, Dust 2, Inferno, Mirage, Nuke, Overpass). Если вам нужна другая карта — уточните у Исполнителя до покупки.</p>
+
+        <h3>4. Цена и оплата</h3>
+        <p>Актуальная стоимость одного пакета (до 20 демо) указана на сайте Исполнителя на момент покупки. Подписки нет. Повторных списаний нет. Оплата производится через <a href="https://boosty.to/leodikadyrov" target="_blank" rel="noopener noreferrer" class="terms-link">Boosty</a> (карты РФ) или <a href="https://ko-fi.com/leodikadyrov" target="_blank" rel="noopener noreferrer" class="terms-link">ko-fi</a> (международные карты и PayPal). Обработку платежей осуществляет соответствующая платформа; Исполнитель получает сумму за вычетом комиссии платформы.</p>
+
+        <h3>5. Доставка</h3>
+        <p>Исполнитель доставляет отчёт на email Заказчика в течение <strong>48 часов</strong> с момента получения заполненной формы с демо-файлом. Формат отчёта: автономный HTML-файл (читается offline, в брендовом стиле, можно делиться) и/или структурированный файл данных (формат может изменяться в период pre-alpha). Время доставки не включает выходные дни и форс-мажор.</p>
+
+        <h3>6. Обязательства Заказчика</h3>
+        <p>Заказчик обязан: (а) указать корректный SteamID64 или ник в игре; (б) предоставить рабочую ссылку на FACEIT-демо или валидный .dem файл; (в) указать действующий email для доставки. Заказчик подтверждает, что вправе передать демо-файл и что его анализ не нарушает применимые условия использования.</p>
+
+        <h3>7. Политика возврата</h3>
+        <p>Полный возврат средств производится, если: (а) Исполнитель не смог обработать переданное демо по технической причине на стороне Исполнителя; или (б) формат демо не поддерживается и это не было оговорено до покупки. Возврат за результаты, с которыми Заказчик не согласен, не производится — данные рассчитываются объективно из демо-файла. Запрос на возврат необходимо направить в течение 7 дней с момента доставки в Telegram или на email Исполнителя.</p>
+
+        <h3>8. Условия раннего доступа</h3>
+        <p><strong>Ранний доступ</strong> — это ограниченный по времени период, в течение которого услуга доступна по сниженной цене до запуска полноценного веб-приложения. Ранний доступ действует, пока это явно обозначено на сайте Исполнителя. Заказчики, оформившие покупку в период раннего доступа, получают следующие бессрочные привилегии: (а) зафиксированная цена покупки навсегда — при запуске веб-приложения цена для новых покупателей вырастет, однако для покупателей раннего доступа никакие последующие изменения цен не применяются; (б) бесплатный перезапуск анализа при добавлении функций анализа по противникам и позициям на карте, применяемый к тем же демо, переданным в рамках данной покупки. Заказчики, оформившие покупку после окончания периода раннего доступа, оплачивают услугу по цене, актуальной на сайте Исполнителя на момент покупки.</p>
+
+        <h3>9. Ограничение ответственности</h3>
+        <p>Услуга предоставляется «как есть» в статусе pre-alpha. Исполнитель не несёт ответственности за косвенный или сопутствующий ущерб. Максимальная ответственность ограничена суммой, уплаченной Заказчиком. Результаты являются аналитическими данными — не коучингом, не игровыми советами.</p>
+
+        <h3>10. Конфиденциальность и сбор данных</h3>
+        <p>Исполнитель не собирает, не хранит и не обрабатывает персональные данные сверх минимально необходимого для оказания услуги (SteamID64 или ник в игре, email для доставки отчёта). Демо-файлы обрабатываются локально на оборудовании Исполнителя и удаляются после завершения анализа. Сайт не использует cookie, скрипты отслеживания, аналитические системы или любые иные средства сбора данных на стороне браузера. Данные не продаются и не передаются третьим сторонам.</p>
+        <p>При наличии явного согласия Заказчика (opt-in, предоставляемого на этапе подачи демо), обезличенные метрики, полученные в ходе анализа (времена реакции, углы прицела, временны́е метки дуэлей — без SteamID, ника, email и любых персональных идентификаторов), могут быть сохранены и использованы для улучшения программного обеспечения и расширения эталонного датасета. Заказчик вправе отозвать это согласие в любой момент, связавшись с Исполнителем; после отзыва обезличенные метрики будут удалены из датасета. Без согласия opt-in никакие метрики не сохраняются после доставки отчёта.</p>
+
+        <h3>11. Акцепт оферты и отказ от права на отзыв (ЕС)</h3>
+        <p>Оплачивая услугу, Заказчик подтверждает, что ознакомился с настоящей офертой, понял и принял её в полном объёме. Заказчики из стран Европейского Союза прямо запрашивают немедленное начало оказания услуги после оплаты и признают, что тем самым отказываются от права на отзыв в соответствии с Директивой ЕС 2011/83/EU в той мере, в которой услуга была полностью оказана.</p>
+
+        <h3>12. Интеллектуальная собственность</h3>
+        <p>Copyright © 2025 Arystan Kadyrov. All Rights Reserved. Программное обеспечение анализа, его исходный код, алгоритмы и сопутствующая документация являются проприетарными и конфиденциальными. Несанкционированное копирование, воспроизведение, распространение, модификация, обратная разработка или любое иное использование данного программного обеспечения — полностью или частично, любым способом — строго запрещены без явного предварительного письменного разрешения правообладателя. По вопросам лицензирования: <a href="mailto:din02winchester25@gmail.com" class="terms-link">din02winchester25@gmail.com</a></p>
+
+        <h3>13. Применимое право</h3>
+        <p>Настоящий договор регулируется законодательством Республики Казахстан. Споры разрешаются путём переговоров; при недостижении согласия — в компетентных судах Республики Казахстан.</p>
+
+        <p class="terms-contact">Контакт: Telegram @puchar · <a href="mailto:din02winchester25@gmail.com" class="terms-link">din02winchester25@gmail.com</a></p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="data.js" defer></script>
+<!-- CHARTS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  new Chart(document.getElementById("stackedChart").getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: BENCHMARK_DATA.players.slice(0, 3),
+      datasets: [
+        { label: "T0\u2192T1  Perception (notice enemy)", data: BENCHMARK_DATA.t0_t1_median.slice(0, 3), backgroundColor: "#e8b84b", borderRadius: 3 },
+        { label: "T1\u2192T2  Execution (aim + shoot)",   data: BENCHMARK_DATA.t1_t2_median.slice(0, 3), backgroundColor: "#3a3a50", borderRadius: 3 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: "#a0a0b0", font: { family: "JetBrains Mono", size: 11 } } },
+        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw}ms` } },
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: "#a0a0b0", font: { family: "JetBrains Mono" } }, grid: { color: "#2a2a35" } },
+        y: { stacked: true, ticks: { color: "#a0a0b0", font: { family: "JetBrains Mono" }, callback: v => v + "ms" }, grid: { color: "#2a2a35" }, title: { display: true, text: "Median duel time (ms)", color: "#7a7a90" } },
+      },
+    },
+  });
+
+  new Chart(document.getElementById("angleChart").getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: BENCHMARK_DATA.players.slice(0, 3),
+      datasets: [{
+        label: "Median crosshair angle at T0 (\u00b0)",
+        data: [ BENCHMARK_DATA.crosshair_angle_median.donk, BENCHMARK_DATA.crosshair_angle_median.shoke, BENCHMARK_DATA.crosshair_angle_median.strogo ],
+        backgroundColor: "#e8b84b",
+        borderRadius: 3,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: "#a0a0b0", font: { family: "JetBrains Mono", size: 11 } } },
+        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw}\u00b0` } },
+      },
+      scales: {
+        x: { ticks: { color: "#a0a0b0", font: { family: "JetBrains Mono" } }, grid: { color: "#2a2a35" } },
+        y: { ticks: { color: "#a0a0b0", font: { family: "JetBrains Mono" }, callback: v => v + "\u00b0" }, grid: { color: "#2a2a35" }, title: { display: true, text: "Degrees (lower = better)", color: "#7a7a90" }, beginAtZero: true },
+      },
+    },
+  });
+});
+</script>
+
+<!-- TERMS MODAL JS -->
+<script>
+  function openTerms() {
+    var modal = document.getElementById('terms-modal');
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    modal.querySelector('.modal-close').focus();
+  }
+  function closeTerms() {
+    var modal = document.getElementById('terms-modal');
+    modal.hidden = true;
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeTerms();
+  });
+  document.getElementById('terms-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeTerms();
+  });
+</script>
+
+<!-- I18N -->
+<script>
+  function setLang(lang) {
+    document.querySelectorAll('[data-lang]').forEach(function(el) {
+      el.style.display = el.getAttribute('data-lang') === lang ? '' : 'none';
+    });
+
+    document.querySelectorAll('[data-aria-en]').forEach(function(el) {
+      var v = el.getAttribute('data-aria-' + lang);
+      if (v) el.setAttribute('aria-label', v);
+    });
+
+    var btnEn = document.getElementById('btn-en');
+    var btnRu = document.getElementById('btn-ru');
+
+    btnEn.classList.toggle('active', lang === 'en');
+    btnRu.classList.toggle('active', lang === 'ru');
+
+    btnEn.setAttribute('aria-pressed', lang === 'en');
+    btnRu.setAttribute('aria-pressed', lang === 'ru');
+
+    document.documentElement.lang = lang;
+    try { localStorage.setItem('cs2ddm_lang', lang); } catch(e) {}
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    var saved = 'en';
+    try { saved = localStorage.getItem('cs2ddm_lang') || 'en'; } catch(e) {}
+    setLang(saved);
+  });
+</script>
+
+</body>
+</html>

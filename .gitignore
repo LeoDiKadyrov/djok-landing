@@ -1,0 +1,13 @@
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python (regen script artefacts)
+__pycache__/
+*.pyc
+*.pyo

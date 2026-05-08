@@ -1,0 +1,58 @@
+# Djok
+
+> CS2 reaction time analysis tool. Decomposes every duel from a real FACEIT demo into three reaction phases — T0→T1 (perception, time from enemy first geometrically visible to aim-start), T1→T2 (aim, aim-start to first hit), and crosshair angle at T0 (pre-aim accuracy in degrees). Each metric is tier-classified against fixed pro ceilings (donk-class — Elite / Good / Average / Work needed) and paired with one drill prescription per worst metric.
+
+Djok is for FACEIT level 8–10 CS2 players who train aim daily but cannot tell whether they lose duels because they were slow to perceive, slow to aim, or pre-aimed wrong. Aim trainers like Aim Lab and KovaaK's drill bot reaction; Leetify reports an aggregated rating. Djok decomposes the actual phases on the actual demo where the duel was lost.
+
+## Method
+
+- T0 = first geometric visibility — BVH+AABB ray cast to 8 corners of enemy bounding box on the map's `.tri` mesh (awpy `VisibilityChecker`), with +64u eye height for player and enemy
+- T1 = aim-start — viewangle second-derivative spike from `usercmd_viewangle` ticks
+- T2 = first hit — `player_hurt` event tick from demo
+- Smoke suppression — sphere intersection (r≈144u) against active smokes
+- Flash suppression — `player_blind` event windows skipped
+- Tickrate 64 (CS2 standard), ms_per_tick = 15.625ms
+- Code stays private; methodology and dataset are public
+
+## Pricing
+
+- **Free tier card**: $0 — 1 demo per submission, worst-metric callout, one drill prescription
+- **Full report**: $5 — up to 20 demos per order, drill prescription per metric, peek/hold split, crosshair angle, side-by-side pro benchmarks (donk + karrigan), downloadable HTML report (offline, brand-styled, shareable)
+
+## Pro reference data
+
+- donk (Spirit) peek: T0→T1 = 172ms median, T1→T2 = 312ms median, crosshair angle at T0 = 5.2° median (n=448 FACEIT peeks)
+- karrigan (Falcons) peek: T0→T1 = 203ms median, T1→T2 = 344ms median, crosshair angle at T0 = 5.8° median (n=224 FACEIT peeks)
+- Database state (2026-05-08): 1042 engagements analyzed, 10738 duel attempts, 83 demos (donk 26 + karrigan 57)
+
+## Workflow
+
+1. Player submits a `.dem` file via Tally form on landing page (collects SteamID + Telegram contact)
+2. Manual analysis pipeline runs on submitter's machine (Streamlit + custom Python — `ddm_analyzer.py`, `t0_detector.py`, `interpretation.py`, `report_generator.py`)
+3. `.html` report delivered via Telegram DM within 48h
+4. Free tier returns 1 worst-metric callout + 1 drill prescription; paid tier returns full per-metric tiers + drill set + peek/hold split + crosshair angle + pro benchmarks
+
+## Public surface
+
+- Landing: https://djok.pages.dev/
+- Sample report: https://djok.pages.dev/sample-report.html
+- Submit form: https://tally.so/r/KYDaXV (linked from landing CTA)
+- Payment (paid tier): Boosty (https://boosty.to/leodikadyrov) for RU + Ko-fi (https://ko-fi.com/leodikadyrov) for international
+
+## What Djok is NOT
+
+- Not an aim trainer (no synthetic drills, no bots, no browser RT tests)
+- Not a Leetify-style aggregator (no single-number "Aim Rating" — Djok ships per-phase decomposition)
+- Not real-time / on-server (manual demo upload, 48h delivery)
+- Not a coaching service (data + drill prescription only — no live coaching, no team analysis yet)
+
+## Contact
+
+- Telegram DM via landing CTA / Tally form
+- Twitter/X: @leodikadyrov (builder voice, AI-tooling)
+- Creator: Arystan Kadyrov (Implementation Manager Цифрового рубля + Psychodemia student + BJJ practitioner)
+
+## See also
+
+- [Full description for AI agents](/llms-full.txt) — extended product context, methodology details, FAQ
+- [Sample report HTML](/sample-report.html) — example output for a single demo

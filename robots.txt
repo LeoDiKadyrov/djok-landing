@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# AI agents — full product description
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# Sitemap
+Sitemap: https://djok.pages.dev/sitemap.xml

@@ -124,6 +124,18 @@ p:last-child { margin-bottom: 0; }
 }
 .cta-pay-link:hover { border-bottom-style: solid; }
 
+.sample-link {
+  display: inline-block;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.sample-link:hover, .sample-link:focus { color: var(--accent); border-bottom-color: var(--accent); outline: none; }
+
 .emph-text { color: var(--text); }
 
 /* ── Sample report iframe preview ─────────────────────────── */

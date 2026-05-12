@@ -90,7 +90,7 @@ def main() -> None:
     # Donk row
     d.text((pad + 56, data_y + 16), "donk peek T0→T1", fill=MUTED, font=f_data_label)
     d.text((pad + 56, data_y + 48), "172ms", fill=ACCENT, font=f_data_value)
-    d.text((pad + 56, data_y + 132), "n=448 FACEIT peeks", fill=MUTED, font=f_data_label)
+    d.text((pad + 56, data_y + 132), "n=956 FACEIT peeks", fill=MUTED, font=f_data_label)
 
     # Vertical separator
     sx = (W // 2) + 80
@@ -99,7 +99,7 @@ def main() -> None:
     # Karrigan row
     d.text((sx + 32, data_y + 16), "karrigan peek T0→T1", fill=MUTED, font=f_data_label)
     d.text((sx + 32, data_y + 48), "203ms", fill=TEXT, font=f_data_value)
-    d.text((sx + 32, data_y + 132), "n=224 FACEIT peeks", fill=MUTED, font=f_data_label)
+    d.text((sx + 32, data_y + 132), "n=559 FACEIT peeks", fill=MUTED, font=f_data_label)
 
     # Tagline at bottom
     f_foot = load_font(FONT_CANDIDATES_MONO, 22)

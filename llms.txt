@@ -17,13 +17,28 @@ Djok is for FACEIT level 8–10 CS2 players who train aim daily but cannot tell 
 ## Pricing
 
 - **Free tier card**: $0 — 1 demo per submission, worst-metric callout, one drill prescription
-- **Full report**: $5 — up to 20 demos per order, drill prescription per metric, peek/hold split, crosshair angle, side-by-side pro benchmarks (donk + karrigan), downloadable HTML report (offline, brand-styled, shareable)
+- **Full report**: $5 — up to 20 demos per order, drill prescription per metric, peek/hold split, crosshair angle, side-by-side pro benchmarks (12 pros across Spirit + FaZe), downloadable HTML report (offline, brand-styled, shareable)
 
 ## Pro reference data
 
-- donk (Spirit) peek: T0→T1 = 172ms median, T1→T2 = 312ms median, crosshair angle at T0 = 5.2° median (n=448 FACEIT peeks)
-- karrigan (Falcons) peek: T0→T1 = 203ms median, T1→T2 = 344ms median, crosshair angle at T0 = 5.8° median (n=224 FACEIT peeks)
-- Database state (2026-05-08): 1042 engagements analyzed, 10738 duel attempts, 83 demos (donk 26 + karrigan 57)
+Twelve pros across Team Spirit and FaZe, N≥142 peek trials each. Peek engagements only, clean ≤2000ms. Sorted by T0→T1 ASC:
+
+| Player | Team | n peek | T0→T1 median | T1→T2 median | Crosshair@T0 median |
+|-|-|-|-|-|-|
+| donk | Spirit | 956 | 172ms | 344ms | 5.2° |
+| broky | FaZe | 153 | 172ms | 422ms | 6.4° |
+| frozen | FaZe | 335 | 188ms | 266ms | 4.4° |
+| sh1ro | Spirit | 180 | 188ms | 273ms | 4.9° |
+| karrigan | FaZe | 559 | 203ms | 375ms | 5.8° |
+| tN1R | Spirit | 324 | 203ms | 297ms | 4.8° |
+| twistzz | FaZe | 301 | 203ms | 250ms | 5.3° |
+| jcobbb | FaZe | 272 | 203ms | 281ms | 5.2° |
+| zweih | Spirit | 192 | 219ms | 281ms | 4.8° |
+| chopper | Spirit | 142 | 219ms | 273ms | 4.3° |
+| zont1x | Spirit | 276 | 234ms | 297ms | 5.2° |
+| magixx | Spirit | 168 | 234ms | 258ms | 4.7° |
+
+- Database state (2026-05-12): 9027 engagements analyzed across 154 distinct players, 143 demos (Spirit 86 + FaZe 57)
 
 ## Workflow
 

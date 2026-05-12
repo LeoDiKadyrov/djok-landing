@@ -51,7 +51,7 @@ Each player receives one **drill prescription** mapped to their **worst metric**
 ### Survivorship and sample size
 
 - Every metric carries an `n` — number of qualifying peeks/holds/duels for that player
-- Cross-player comparisons require careful framing: donk's 172ms is across 26 demos / 448 peeks of FACEIT-tier opponents; a level 9 player's 240ms is across their own demos
+- Cross-player comparisons require careful framing: donk's 172ms is across 86 demos / 956 peeks of FACEIT-tier opponents; a level 9 player's 240ms is across their own demos
 - The relevant comparison is not "are you faster than donk" — the answer is no, by definition. The relevant comparison is "is your perception phase closer to donk's tier ceiling than your aim phase, your pre-aim phase, or some mix"
 
 ## Frequently-asked questions

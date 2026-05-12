@@ -13,11 +13,12 @@ Djok is for FACEIT level 8–10 CS2 players who train aim daily but cannot tell 
 - Flash suppression — `player_blind` event windows skipped
 - Tickrate 64 (CS2 standard), ms_per_tick = 15.625ms
 - Code stays private; methodology and dataset are public
+- **Validation:** initial n=10 manual calibration at project start (mid-2025); ground-truth refresh study planned. Metrics geometrically defensible (BVH+AABB raycasting, viewangle second derivative, demo events). Absolute milliseconds should be read as calibrated-against-pro-baseline, not laboratory ground truth. See `/llms-full.txt` Validation section.
 
 ## Pricing
 
-- **Free tier card**: $0 — 1 demo per submission, worst-metric callout, one drill prescription
-- **Full report**: $5 — up to 20 demos per order, drill prescription per metric, peek/hold split, crosshair angle, side-by-side pro benchmarks (12 pros across Spirit + FaZe), downloadable HTML report (offline, brand-styled, shareable)
+- **Free tier card**: $0 — 1 demo per submission, worst-metric callout, three direction options
+- **Full report**: $5 — up to 20 demos per order, three direction options per metric (optional short drill only for motor execution per drill-transfer literature), peek/hold split, crosshair angle, side-by-side pro benchmarks (12 pros across Spirit + FaZe), downloadable HTML report (offline, brand-styled, shareable)
 
 ## Pro reference data
 

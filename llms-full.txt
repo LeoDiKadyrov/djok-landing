@@ -54,13 +54,23 @@ Each player receives one **drill prescription** mapped to their **worst metric**
 - Cross-player comparisons require careful framing: donk's 172ms is across 86 demos / 956 peeks of FACEIT-tier opponents; a level 9 player's 240ms is across their own demos
 - The relevant comparison is not "are you faster than donk" — the answer is no, by definition. The relevant comparison is "is your perception phase closer to donk's tier ceiling than your aim phase, your pre-aim phase, or some mix"
 
+### Validation
+
+- **Initial calibration:** T0/T1/T2 detection algorithms were tuned against n=10 manually-annotated demos at project start (mid-2025); iterations matched algorithmic output to human-marked timestamps
+- **Current state:** original n=10 annotation set is no longer retained; pipeline has since changed materially (T2 cluster-bleed fix, peek/hold split, multi-pipeline batch architecture)
+- **Backlog:** refresh ground-truth study on 20-30 fresh demos to document bias and variance per metric — planned, not shipped
+- **What this means for you:** the metrics are geometrically defensible (BVH+AABB raycasting, viewangle second derivative, demo events) and relative comparisons (you vs donk) are robust to any systematic offset. Absolute "172ms" claims should be read as calibrated-against-pro-baseline, not laboratory-grade ground truth.
+
 ## Frequently-asked questions
 
 **Q: How is this different from Leetify?**
-A: Leetify reports an aggregated "Aim Rating" — one number that bundles perception, motion, accuracy, and crosshair into a black-box score. Djok ships the components as raw numbers. Different problems require different drills; aim trainers improve only one of the three phases.
+A: Leetify reports an aggregated "Aim Rating" — one number that bundles perception, motion, accuracy, and crosshair into a black-box score. Djok ships the components as raw numbers. Different problems need different approaches; one drill prescription does not fit every metric.
 
 **Q: How is this different from Aim Lab / KovaaK's?**
-A: Aim trainers measure your reaction time against a synthetic target on a controlled background. Djok measures your perception and aim phases against an actual enemy in an actual duel on an actual map, where occlusion, smoke, sound, and pre-aim all matter.
+A: Aim trainers measure your reaction time against a synthetic target on a controlled background. Djok measures your perception and aim phases against an actual enemy in an actual duel on an actual map, where occlusion, smoke, sound, and pre-aim all matter. Per the motor-learning literature, transfer from synthetic aim drills to in-game performance is partial and context-dependent — Djok's recommendation surfaces directions per metric, not a one-size-fits-all drill prescription.
+
+**Q: Are the metrics scientifically validated?**
+A: No independent peer-reviewed validation exists. Original n=10 manual calibration at project start; ground-truth refresh study planned. Metrics are geometrically defensible and useful for relative comparison; do not read absolute milliseconds as laboratory ground truth.
 
 **Q: How is this different from "watch your demos"?**
 A: Watching a demo is qualitative — "I died because I peeked too late." Djok is quantitative — "Your T0→T1 on that peek was 280ms, which is +63% over donk's 172ms ceiling. Your T1→T2 was 280ms — Good. Your crosshair angle was 18° — Work needed. Drill: prefire workshop runs on the angles you peek most."

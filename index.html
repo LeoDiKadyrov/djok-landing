@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Djok — CS2 Reaction Time Analysis (T0→T1 / T1→T2 / crosshair-angle decomposition)</title>
-  <meta name="description" content="Djok decomposes every CS2 duel into perception (T0→T1), aim (T1→T2), and pre-aim (crosshair angle), measured on real FACEIT demos with BVH+AABB raycasting. donk peek T0→T1 = 172ms (n=956). Compare your split to 12 pros across Spirit + FaZe, get one drill prescription per metric.">
+  <meta name="description" content="Djok decomposes every CS2 duel into perception (T0→T1), aim (T1→T2), and pre-aim (crosshair angle), measured on real FACEIT demos with BVH+AABB raycasting. donk peek T0→T1 = 172ms (n=956). Compare your split to 12 pros across Spirit + FaZe; receive three direction options per metric — no one-size-fits-all drill.">
   <meta name="keywords" content="CS2 reaction time, FACEIT aim analysis, donk reaction time, peek reaction time CS2, crosshair placement analysis, CS2 demo analysis, prefire vs reaction, peeker's advantage, aim duel review">
   <meta name="author" content="Arystan Kadyrov">
   <meta name="robots" content="index, follow">
@@ -39,10 +39,10 @@
     "alternateName": "Djok CS2 Reaction Analysis",
     "applicationCategory": "GameAnalyticsApplication",
     "operatingSystem": "Web (manual analysis pipeline)",
-    "description": "Djok decomposes every CS2 duel into three reaction phases — T0→T1 (perception, time from enemy first geometrically visible to aim-start), T1→T2 (aim, aim-start to first hit), and crosshair angle at T0 (pre-aim accuracy). Measured on real FACEIT demo files using BVH+AABB raycasting on .tri map mesh and viewangle second-derivative spike for aim-start. Each metric is tier-classified against fixed pro ceilings (donk-class) — Elite / Good / Average / Work needed — and paired with one drill prescription per worst metric. Pro reference set: 12 pros across Team Spirit and FaZe, N≥142 peek trials each. donk T0→T1 = 172ms median across 956 FACEIT peeks. karrigan = 203ms across 559 peeks. frozen = 188ms across 335 peeks. chopper best crosshair angle 4.3°.",
+    "description": "Djok decomposes every CS2 duel into three reaction phases — T0→T1 (perception, time from enemy first geometrically visible to aim-start), T1→T2 (aim, aim-start to first hit), and crosshair angle at T0 (pre-aim accuracy). Measured on real FACEIT demo files using BVH+AABB raycasting on .tri map mesh and viewangle second-derivative spike for aim-start. Each metric is tier-classified against fixed pro ceilings (donk-class) — Elite / Good / Average / Work needed — and paired with three direction options per metric (autonomy-first, per drill-transfer literature). Only the motor-execution metric (T1→T2) includes an optional short drill among its three directions. Pro reference set: 12 pros across Team Spirit and FaZe, N≥142 peek trials each. donk T0→T1 = 172ms median across 956 FACEIT peeks. karrigan = 203ms across 559 peeks. frozen = 188ms across 335 peeks. chopper best crosshair angle 4.3°. Metrics initially calibrated against n=10 manual annotations; ground-truth refresh study planned.",
     "offers": [
-      { "@type": "Offer", "name": "Free tier card", "price": "0", "priceCurrency": "USD", "description": "1 demo per submission, worst-metric callout, one drill prescription." },
-      { "@type": "Offer", "name": "Full report", "price": "5", "priceCurrency": "USD", "description": "Up to 20 demos per order, drill prescription per metric, peek/hold split, crosshair angle, side-by-side pro benchmarks, downloadable HTML report." }
+      { "@type": "Offer", "name": "Free tier card", "price": "0", "priceCurrency": "USD", "description": "1 demo per submission, worst-metric callout, three direction options (pick one you will actually do)." },
+      { "@type": "Offer", "name": "Full report", "price": "5", "priceCurrency": "USD", "description": "Up to 20 demos per order, three direction options per metric (optional short drill only for motor execution per drill-transfer literature), peek/hold split, crosshair angle, side-by-side pro benchmarks, downloadable HTML report." }
     ],
     "creator": { "@type": "Person", "name": "Arystan Kadyrov" },
     "keywords": "CS2, FACEIT, reaction time, T0, T1, T2, crosshair angle, BVH, AABB, viewangle, demo analysis, donk, karrigan, peeker advantage, prefire",
@@ -274,7 +274,7 @@
         <li><span data-lang="en">1 demo per submission, free tier card</span><span data-lang="ru" style="display:none">1 демо за отправку, бесплатная карточка</span></li>
         <li><span data-lang="en">Per-metric tier — Elite / Good / Average / Work needed</span><span data-lang="ru" style="display:none">Тир каждой метрики — Elite / Good / Average / Work needed</span></li>
         <li><span data-lang="en">Worst-metric callout: which one gap costs you the most</span><span data-lang="ru" style="display:none">Карточка худшей метрики: какой gap стоит больше всего</span></li>
-        <li><span data-lang="en">One drill prescription for the worst metric</span><span data-lang="ru" style="display:none">Один drill для самой слабой метрики</span></li>
+        <li><span data-lang="en">Three direction options for the worst metric — pick the one you will actually do</span><span data-lang="ru" style="display:none">Три направления для слабой метрики — выбираешь то, что реально будешь делать</span></li>
         <li><span data-lang="en">Delivered to your Telegram within 48h</span><span data-lang="ru" style="display:none">Доставка в Telegram в течение 48ч</span></li>
       </ul>
       <div class="price-terminal-early">
@@ -309,7 +309,7 @@
       <ul class="price-terminal-list">
         <li><span data-lang="en">Up to 20 demos per $5 order (vs 1 demo)</span><span data-lang="ru" style="display:none">До 20 демо за один $5 заказ (vs 1 демо)</span></li>
         <li><span data-lang="en">Pro-ceiling tier thresholds — calibrated against donk-class, not relative</span><span data-lang="ru" style="display:none">Тир-пороги по pro-потолкам — калибровка по уровню donk, не относительная</span></li>
-        <li><span data-lang="en">Drill prescription for every metric (free shows worst only)</span><span data-lang="ru" style="display:none">Drill для каждой метрики (бесплатная показывает только худшую)</span></li>
+        <li><span data-lang="en">Three direction options per metric, autonomy-first framing (only motor-execution metric includes an optional short drill, per drill-transfer literature)</span><span data-lang="ru" style="display:none">Три направления по каждой метрике, выбор за тобой (только моторная фаза имеет опциональный короткий drill — согласно литературе по переносу drill→игра)</span></li>
         <li><span data-lang="en">T0&rarr;T1 (perception) and T1&rarr;T2 (execution) split — peek and hold separated</span><span data-lang="ru" style="display:none">T0&rarr;T1 (восприятие) и T1&rarr;T2 (исполнение) — пик и hold разделены</span></li>
         <li><span data-lang="en">Crosshair placement angle at T0 — degrees off-target on first visibility</span><span data-lang="ru" style="display:none">Угол прицела при T0 — градусы смещения от врага в момент появления</span></li>
         <li><span data-lang="en">Side-by-side vs donk + Spirit-team benchmark dataset</span><span data-lang="ru" style="display:none">Side-by-side с donk + бенчмарки Spirit-команды</span></li>
@@ -388,8 +388,8 @@
       </li>
       <li>
         <span class="badge badge-done">Done</span>
-        <span data-lang="en">Worst-metric coaching card — single specific drill prescription per report</span>
-        <span data-lang="ru" style="display:none">Карточка худшей метрики — один конкретный drill в каждом отчёте</span>
+        <span data-lang="en">Worst-metric coaching card — three direction options per report (you pick which one to commit to)</span>
+        <span data-lang="ru" style="display:none">Карточка худшей метрики — три направления в каждом отчёте (выбираешь сам)</span>
       </li>
       <li>
         <span class="badge badge-done">Done</span>

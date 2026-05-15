@@ -100,10 +100,14 @@
   }
 
   // ── Build & show overlay ──────────────────────────────────
-  function showDoubt() {
+  // forceIdx: optional integer — show specific doubt by index
+  function showDoubt(forceIdx) {
     const lang = detectLang();
     const pool = DOUBTS[lang] || DOUBTS.en;
-    const pick = pool[Math.floor(Math.random() * pool.length)];
+    const idx = (typeof forceIdx === 'number' && !isNaN(forceIdx))
+      ? ((forceIdx % pool.length) + pool.length) % pool.length
+      : Math.floor(Math.random() * pool.length);
+    const pick = pool[idx];
     const ui = UI[lang] || UI.en;
 
     const overlay = document.createElement('div');
@@ -114,6 +118,11 @@
 
     const box = document.createElement('div');
     box.className = 'cs16-doubt-box';
+
+    // CS 1.6 dialog title bar
+    const titleBar = document.createElement('div');
+    titleBar.className = 'cs16-doubt-box-title';
+    titleBar.textContent = ui.label + ' [' + (idx + 1) + '/' + pool.length + ']';
 
     const text = document.createElement('p');
     text.className = 'cs16-doubt-text';
@@ -148,6 +157,7 @@
     });
     document.addEventListener('keydown', onKey);
 
+    box.appendChild(titleBar);
     box.appendChild(text);
     box.appendChild(attr);
     box.appendChild(btn);
@@ -160,11 +170,34 @@
     markShown();
   }
 
-  // ── Public force-trigger for QA: window.__djokDoubt() ─────
-  window.__djokDoubt = function () { showDoubt(); };
+  // ── Public force-trigger for QA: window.__djokDoubt(idx) ──
+  window.__djokDoubt = function (idx) { showDoubt(idx); };
+
+  // ── URL-param trigger for QA:
+  //   ?doubt=1     → force random doubt (skip cooldown + chance)
+  //   ?doubt=N     → force specific doubt by index (1-based)
+  //   ?doubt=force → same as ?doubt=1
+  function checkUrlOverride() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const raw = params.get('doubt');
+      if (raw === null) return false;
+      if (raw === '1' || raw === 'force' || raw === 'true') {
+        setTimeout(function () { showDoubt(); }, 100);
+        return true;
+      }
+      const n = parseInt(raw, 10);
+      if (!isNaN(n) && n > 0) {
+        setTimeout(function () { showDoubt(n - 1); }, 100);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
 
   // ── Roll the dice ─────────────────────────────────────────
   function init() {
+    if (checkUrlOverride()) return;          // URL param wins always
     if (recentlyShown()) return;
     if (Math.random() >= TRIGGER_CHANCE) return;
     setTimeout(showDoubt, DELAY_MS);

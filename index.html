@@ -794,6 +794,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.documentElement.lang = lang;
     try { localStorage.setItem('cs2ddm_lang', lang); } catch(e) {}
+
+    // Swap sample-report iframe to RU/EN version
+    var iframe = document.querySelector('.sample-report-iframe');
+    if (iframe) {
+      var target = lang === 'ru' ? 'sample-report-ru.html' : 'sample-report.html';
+      var current = iframe.getAttribute('src') || '';
+      if (current.indexOf(target) === -1) iframe.setAttribute('src', target);
+    }
+    // Swap sample-report open-link below frame too
+    document.querySelectorAll('a[href$="sample-report.html"], a[href$="sample-report-ru.html"]').forEach(function(a) {
+      a.setAttribute('href', lang === 'ru' ? 'sample-report-ru.html' : 'sample-report.html');
+    });
   }
   document.addEventListener('DOMContentLoaded', function() {
     var saved = 'en';

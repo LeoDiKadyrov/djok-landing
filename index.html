@@ -54,6 +54,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=fallback" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <!-- CS 1.6 aesthetic layer: ekmas/cs16.css base + Djok overrides on top -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ekmas/cs16.css@main/css/cs16.min.css">
+  <link rel="stylesheet" href="cs16.css">
 
   <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "9c95979b24ca4beaaed2bac3379c365f"}'></script>
 </head>
@@ -798,6 +801,9 @@ document.addEventListener('DOMContentLoaded', function () {
     setLang(saved);
   });
 </script>
+
+<!-- CS 1.6 easter egg overlay — 10% chance loading-tip with doubt-thought -->
+<script defer src="easter-egg.js"></script>
 
 </body>
 </html>

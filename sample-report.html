@@ -5,12 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Djok Report — 76561198386265483</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* CS 1.6 aesthetic — ekmas/cs16.css palette pinned + ArialPixel font.
+   Inline so report works offline / standalone. */
+@font-face {
+    font-family: 'ArialPixel';
+    font-style: normal;
+    font-weight: 400;
+    src: url('https://cdn.jsdelivr.net/gh/ekmas/cs16.css@main/ArialPixel.ttf') format('truetype');
+    font-display: swap;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'ArialPixel', system-ui, sans-serif; }
+
 body {
-    background: #0e0e12;
-    color: #e0e0e8;
-    font-family: Space Grotesk, Inter, system-ui, sans-serif;
-    font-size: 14px;
+    background: #4a5942;
+    color: #dedfd6;
+    font-family: 'ArialPixel', system-ui, sans-serif;
+    font-size: 15px;
     line-height: 1.5;
     padding: 32px 24px 64px;
     max-width: 1100px;
@@ -18,72 +29,76 @@ body {
 }
 h1 {
     font-size: 28px;
-    font-weight: 700;
-    color: #e0e0e8;
+    font-weight: 400;
+    color: #c4b550;
+    text-transform: uppercase;
     margin-bottom: 4px;
+    letter-spacing: 0;
 }
 .sub-header {
     font-size: 14px;
-    color: #7a7a90;
-    margin-bottom: 48px;
-    font-family: JetBrains Mono, Consolas, monospace;
-}
-.section {
+    color: #a0aa95;
     margin-bottom: 48px;
 }
+.section { margin-bottom: 48px; }
 .section-header {
     font-size: 20px;
-    font-weight: 600;
-    color: #e0e0e8;
+    font-weight: 400;
+    color: #c4b550;
+    text-transform: uppercase;
     margin-bottom: 24px;
     padding-bottom: 8px;
-    border-bottom: 1px solid #2a2a35;
+    border-bottom: 1px solid #292c21;
 }
 .sub-section-header {
     font-size: 16px;
-    font-weight: 600;
-    color: #e0e0e8;
+    font-weight: 400;
+    color: #c4b550;
+    text-transform: uppercase;
     margin: 24px 0 16px;
 }
-/* Worst metric card */
+
+/* CS 1.6 bevel — 4-side border, no radius */
 .worst-card {
-    border: 1px solid #e8b84b;
-    background: #16161d;
-    border-radius: 4px;
-    padding: 16px;
+    background: #3e4637;
+    border-top: 2px solid #8c9284;
+    border-left: 2px solid #8c9284;
+    border-right: 2px solid #292c21;
+    border-bottom: 2px solid #292c21;
+    border-radius: 0;
+    padding: 16px 18px;
     margin-bottom: 24px;
 }
 .worst-card-label {
-    font-size: 12px;
-    font-weight: 500;
-    color: #e8b84b;
+    font-size: 13px;
+    color: #c4b550;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
 }
 .worst-card-metric {
-    font-size: 28px;
-    font-weight: 700;
-    color: #e0e0e8;
+    font-size: 26px;
+    font-weight: 400;
+    color: #dedfd6;
     line-height: 1.1;
     margin-bottom: 8px;
 }
 .worst-card-gap {
     font-size: 14px;
-    color: #7a7a90;
+    color: #a0aa95;
     margin-bottom: 8px;
 }
-.worst-card-gap .mono { font-family: JetBrains Mono, Consolas, monospace; }
+.worst-card-gap .mono { color: #c4b550; }
 .worst-card-drill {
     font-size: 14px;
-    color: #e0e0e8;
+    color: #dedfd6;
     margin-top: 8px;
 }
+
 .menu-intro {
-    font-size: 13px;
-    color: #7a7a90;
+    font-size: 14px;
+    color: #a0aa95;
     margin: 12px 0 6px;
-    font-style: italic;
 }
 .direction-list {
     list-style: none;
@@ -91,71 +106,78 @@ h1 {
     margin: 0;
 }
 .direction-list li {
-    padding: 8px 0 8px 0;
-    border-bottom: 1px solid #2a2a35;
+    padding: 8px 0;
+    border-bottom: 1px solid #292c21;
     display: flex;
     gap: 10px;
 }
 .direction-list li:last-child { border-bottom: none; }
 .direction-list .dir-title {
-    color: #e8b84b;
-    font-weight: 600;
-    flex: 0 0 140px;
-    font-family: JetBrains Mono, Consolas, monospace;
-    font-size: 12px;
+    color: #c4b550;
+    font-weight: 400;
+    flex: 0 0 150px;
+    font-size: 13px;
+    text-transform: uppercase;
 }
 .direction-list .dir-body {
-    color: #e0e0e8;
+    color: #dedfd6;
     flex: 1;
-    font-size: 13px;
+    font-size: 14px;
 }
 .direction-list .dir-drill-badge {
     display: inline-block;
-    background: #1a1408;
-    color: #e8b84b;
-    font-size: 10px;
+    background: #292c21;
+    color: #c4b550;
+    font-size: 11px;
     padding: 1px 6px;
     margin-right: 6px;
-    border-radius: 2px;
+    border-radius: 0;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
+
 .tier-table td.col-direction { width: 29%; }
 .tier-table .table-directions {
     list-style: none;
     padding: 0;
     margin: 0;
-    font-size: 12px;
+    font-size: 13px;
 }
 .tier-table .table-directions li {
     padding: 2px 0;
-    color: #7a7a90;
+    color: #a0aa95;
 }
 .tier-table .table-directions li .t-title {
-    color: #e8b84b;
-    font-weight: 600;
-    font-family: JetBrains Mono, Consolas, monospace;
+    color: #c4b550;
+    font-weight: 400;
     margin-right: 6px;
+    text-transform: uppercase;
 }
 .tier-table .table-directions .t-drill-mark {
-    color: #e8b84b;
-    font-size: 10px;
+    color: #c4b550;
+    font-size: 11px;
     margin-left: 4px;
 }
-/* Tier table */
+
+/* Tier table — CS console panel */
 .tier-table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 32px;
+    background: #3e4637;
+    border-top: 2px solid #8c9284;
+    border-left: 2px solid #8c9284;
+    border-right: 2px solid #292c21;
+    border-bottom: 2px solid #292c21;
 }
 .tier-table th {
-    background: #0e0e12;
-    color: #7a7a90;
-    font-size: 12px;
-    font-weight: 500;
+    background: #292c21;
+    color: #c4b550;
+    font-size: 13px;
+    font-weight: 400;
     text-transform: uppercase;
     padding: 8px;
     text-align: left;
+    letter-spacing: 0.03em;
 }
 .tier-table th:nth-child(2),
 .tier-table th:nth-child(3),
@@ -163,41 +185,58 @@ h1 {
 .tier-table th:nth-child(5) { text-align: right; }
 .tier-table td {
     padding: 10px 8px;
-    border-bottom: 1px solid #2a2a35;
+    border-bottom: 1px solid #292c21;
     font-size: 14px;
     vertical-align: middle;
+    color: #dedfd6;
 }
-.tier-table tr.odd td { background: #16161d; }
-.tier-table tr.even td { background: #0e0e12; }
-.tier-table td.mono { font-family: JetBrains Mono, Consolas, monospace; text-align: right; }
-.tier-table td.col-metric { width: 25%; }
+.tier-table tr.odd td { background: #3e4637; }
+.tier-table tr.even td { background: #4a5942; }
+.tier-table td.mono { text-align: right; color: #c4b550; }
+.tier-table td.col-metric { width: 25%; color: #dedfd6; }
 .tier-table td.col-you { width: 10%; }
 .tier-table td.col-tier { width: 12%; }
 .tier-table td.col-gap { width: 12%; }
 .tier-table td.col-bm { width: 12%; }
+
+/* Override inline tier-badge styles — !important wins */
 .tier-badge {
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 3px;
-    display: inline-block;
-    white-space: nowrap;
+    font-size: 12px !important;
+    padding: 3px 8px !important;
+    border-radius: 0 !important;
+    display: inline-block !important;
+    white-space: nowrap !important;
+    background: #3e4637 !important;
+    color: #c4b550 !important;
+    border-top: 1px solid #8c9284 !important;
+    border-left: 1px solid #8c9284 !important;
+    border-right: 1px solid #292c21 !important;
+    border-bottom: 1px solid #292c21 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
+
 .caveat-row td {
-    color: #7a7a90;
-    font-size: 12px;
-    padding: 4px 8px;
-    font-style: italic;
+    color: #a0aa95 !important;
+    font-size: 12px !important;
+    padding: 4px 8px !important;
+    background: #3e4637 !important;
 }
+
 /* Charts placeholder */
 #charts-section {
     min-height: 40px;
-    background: #16161d;
-    border: 1px solid #2a2a35;
-    border-radius: 4px;
+    background: #3e4637;
+    border-top: 2px solid #8c9284;
+    border-left: 2px solid #8c9284;
+    border-right: 2px solid #292c21;
+    border-bottom: 2px solid #292c21;
+    border-radius: 0;
     padding: 16px;
-    color: #7a7a90;
-    font-size: 13px;
+    color: #a0aa95;
+    font-size: 14px;
 }
+
 /* Raw data table */
 .raw-table {
     width: 100%;
@@ -205,12 +244,17 @@ h1 {
     font-size: 13px;
     overflow-x: auto;
     display: block;
+    background: #3e4637;
+    border-top: 2px solid #8c9284;
+    border-left: 2px solid #8c9284;
+    border-right: 2px solid #292c21;
+    border-bottom: 2px solid #292c21;
 }
 .raw-table th {
-    background: #0e0e12;
-    color: #7a7a90;
+    background: #292c21;
+    color: #c4b550;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     text-transform: uppercase;
     padding: 8px;
     text-align: left;
@@ -218,15 +262,17 @@ h1 {
 }
 .raw-table td {
     padding: 8px;
-    border-bottom: 1px solid #2a2a35;
+    border-bottom: 1px solid #292c21;
     white-space: nowrap;
+    color: #dedfd6;
 }
-.raw-table tr.odd td { background: #16161d; }
-.raw-table tr.even td { background: #0e0e12; }
-.raw-table td.mono { font-family: JetBrains Mono, Consolas, monospace; }
+.raw-table tr.odd td { background: #3e4637; }
+.raw-table tr.even td { background: #4a5942; }
+.raw-table td.mono { color: #c4b550; }
+
 .table-caption {
-    font-size: 12px;
-    color: #7a7a90;
+    font-size: 13px;
+    color: #a0aa95;
     margin-bottom: 8px;
 }
 </style>

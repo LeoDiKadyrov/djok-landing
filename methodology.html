@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Methodology &amp; Limitations — Djok</title>
+  <meta name="description" content="How Djok measures CS2 reaction time: BVH+AABB raycasting, T0/T1/T2 derivation, known limitations, audit log. Honest about what works and what doesn't.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://djok.din02winchester25.workers.dev/methodology.html">
+  <meta name="theme-color" content="#0e0e12">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=fallback" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ekmas/cs16.css@main/css/cs16.min.css">
+  <link rel="stylesheet" href="cs16.css">
+</head>
+<body>
+
+<nav class="lang-switch" aria-label="Language">
+  <button id="btn-en" class="lang-btn active" aria-pressed="true" onclick="setLang('en')">EN</button>
+  <button id="btn-ru" class="lang-btn" aria-pressed="false" onclick="setLang('ru')">RU</button>
+</nav>
+
+<main>
+
+<section id="hero" style="padding: 60px 0 30px;">
+  <div class="container">
+    <p class="label">
+      <span data-lang="en">Methodology &amp; Limitations</span>
+      <span data-lang="ru" style="display:none">Методология и ограничения</span>
+    </p>
+    <h1>
+      <span data-lang="en">How Djok measures reaction time</span>
+      <span data-lang="ru" style="display:none">Как Djok измеряет время реакции</span>
+    </h1>
+    <p>
+      <span data-lang="en">No magic. Real demos parsed tick-by-tick. Every duel split into measurable phases. Known limitations listed below — when the tool gets it wrong, you should know how and why.</span>
+      <span data-lang="ru" style="display:none">Никакой магии. Реальные демки разбираются тик за тиком. Каждая дуэль делится на измеримые фазы. Известные ограничения перечислены ниже — когда тул ошибается, ты должен знать как и почему.</span>
+    </p>
+    <p style="margin-top: 12px;">
+      <a href="/" class="cta-pay-link">
+        <span data-lang="en">← back to landing</span>
+        <span data-lang="ru" style="display:none">← на главную</span>
+      </a>
+    </p>
+  </div>
+</section>
+
+<!-- METHOD -->
+<section id="method">
+  <div class="container">
+    <h2>
+      <span data-lang="en">1. The split: T0 → T1 → T2</span>
+      <span data-lang="ru" style="display:none">1. Деление: T0 → T1 → T2</span>
+    </h2>
+    <p>
+      <span data-lang="en"><strong>T0</strong> = the tick at which the enemy first becomes <em>geometrically visible</em> from the player's eye position. Measured via BVH+AABB raycasting: a ray from the player eye to each of the 8 corners of the enemy's axis-aligned bounding box. If any ray clears world geometry, the enemy is visible at that tick.</span>
+      <span data-lang="ru" style="display:none"><strong>T0</strong> = тик, на котором враг впервые становится <em>геометрически виден</em> с позиции глаз игрока. Измерение через BVH+AABB raycasting: луч от глаза игрока к каждому из 8 углов axis-aligned bounding box врага. Если хоть один луч проходит сквозь геометрию мира — враг виден на этом тике.</span>
+    </p>
+    <p>
+      <span data-lang="en"><strong>T1</strong> = the first tick of sustained crosshair movement <em>toward the enemy</em>. Detected via viewangle delta + a "moving towards" check: each tick, compare current and next-tick angular distance to the desired aim direction. If next is closer than current (beyond noise tolerance) and the movement persists for at least 2 consecutive ticks, the first qualifying tick is T1.</span>
+      <span data-lang="ru" style="display:none"><strong>T1</strong> = первый тик устойчивого движения прицела <em>в сторону врага</em>. Определяется через дельту viewangle + проверку «moving towards»: каждый тик сравниваем текущее и следующее угловое расстояние до целевого направления. Если next ближе чем current (за пределом шумового допуска) и движение длится минимум 2 последовательных тика — первый удовлетворяющий тик становится T1.</span>
+    </p>
+    <p>
+      <span data-lang="en"><strong>T2</strong> = the tick of the first registered hit on the target. Derived from the `player_hurt` event, attacker = player, victim = target enemy.</span>
+      <span data-lang="ru" style="display:none"><strong>T2</strong> = тик первого зарегистрированного попадания по цели. Берётся из события `player_hurt`, attacker = игрок, victim = целевой враг.</span>
+    </p>
+    <p>
+      <span data-lang="en"><strong>Derived metrics:</strong> T0→T1 = perception/reaction (ms). T1→T2 = aim mechanics (ms). T0→T2 = total time to damage (ms). Tickrate 64 → 15.625ms per tick.</span>
+      <span data-lang="ru" style="display:none"><strong>Производные метрики:</strong> T0→T1 = восприятие/реакция (мс). T1→T2 = механика прицеливания (мс). T0→T2 = общее время до урона (мс). Tickrate 64 → 15.625мс на тик.</span>
+    </p>
+
+    <h2 style="margin-top: 40px;">
+      <span data-lang="en">2. Engagement classification</span>
+      <span data-lang="ru" style="display:none">2. Классификация дуэлей</span>
+    </h2>
+    <p>
+      <span data-lang="en">Each engagement is tagged <strong>peek</strong> or <strong>hold</strong> by player velocity at T0. Player moving at &gt;120 ups (units per second) at T0 = peek (active aggression). Below = hold (static defensive angle). Crosshair angle at T0 is measured separately and reported alongside.</span>
+      <span data-lang="ru" style="display:none">Каждая дуэль тегается <strong>peek</strong> или <strong>hold</strong> по скорости игрока на T0. Игрок движется &gt;120 ups (units per second) на T0 = peek (активная агрессия). Меньше = hold (статичный держ угла). Угол прицела на T0 измеряется отдельно и приводится рядом.</span>
+    </p>
+
+    <h2 style="margin-top: 40px;">
+      <span data-lang="en">3. Smoke and visibility</span>
+      <span data-lang="ru" style="display:none">3. Дымы и видимость</span>
+    </h2>
+    <p>
+      <span data-lang="en">Smoke grenades are tracked via `smokegrenade_detonate` / `smokegrenade_expired` events. Smoke is modelled as a sphere of fixed radius centered on the detonation. Any T0 raycast passing through an active smoke volume is rejected — that tick is not "visible" for the purposes of reaction measurement.</span>
+      <span data-lang="ru" style="display:none">Гранаты-дымы трекаются через события `smokegrenade_detonate` / `smokegrenade_expired`. Дым моделируется как сфера фиксированного радиуса вокруг точки взрыва. Любой T0-raycast, проходящий через активный дым, отклоняется — этот тик не считается «видимым» для измерения реакции.</span>
+    </p>
+  </div>
+</section>
+
+<!-- LIMITATIONS -->
+<section id="limitations" style="background: #16161d;">
+  <div class="container">
+    <p class="label">
+      <span data-lang="en">Honest disclosure</span>
+      <span data-lang="ru" style="display:none">Честное раскрытие</span>
+    </p>
+    <h2>
+      <span data-lang="en">Known limitations</span>
+      <span data-lang="ru" style="display:none">Известные ограничения</span>
+    </h2>
+
+    <h3 style="margin-top: 30px;">
+      <span data-lang="en">A. T1 grace-period floor artifact</span>
+      <span data-lang="ru" style="display:none">A. Floor-артефакт T1 grace-period</span>
+    </h3>
+    <p>
+      <span data-lang="en"><strong>Status:</strong> identified 2026-05-16, fix in progress. <strong>Surfaced by:</strong> Reddit user <code>shimszy</code> on r/GlobalOffensive (thank you).</span>
+      <span data-lang="ru" style="display:none"><strong>Статус:</strong> обнаружено 2026-05-16, фикс в работе. <strong>Поднял:</strong> пользователь Reddit <code>shimszy</code> на r/GlobalOffensive (спасибо).</span>
+    </p>
+    <p>
+      <span data-lang="en">The T1 detector has a 120ms grace period after T0 before searching for aim onset (added originally to filter out pre-aim micro-corrections). Combined with the tick quantum (15.625ms), this creates a hard 125ms (8-tick) floor on every T0→T1 measurement. Across the pro corpus, 25-43% of peek engagements are pinned at exactly 125ms. The grace period is structurally redundant with the existing "moving towards" + sustained-aim filters and is being removed or lowered.</span>
+      <span data-lang="ru" style="display:none">У T1-детектора есть 120мс grace-period после T0, прежде чем начинается поиск старта прицеливания (добавлен изначально для фильтрации pre-aim микро-коррекций). В сочетании с тик-квантом (15.625мс) это создаёт жёсткий 125мс (8-тиковый) floor на каждом измерении T0→T1. По pro-корпусу 25-43% peek-дуэлей пинятся ровно на 125мс. Grace-period структурно избыточен относительно существующих фильтров «moving towards» + sustained-aim и убирается / снижается.</span>
+    </p>
+    <p>
+      <span data-lang="en"><strong>Impact on existing reports:</strong> any T0→T1 value at or near 125ms in earlier reports may be the floor, not biology. After the fix lands, affected reports will be regenerated. The T1→T2 metric, crosshair-angle metric, kill-rate, and hit-rate are unaffected.</span>
+      <span data-lang="ru" style="display:none"><strong>Влияние на существующие отчёты:</strong> любое значение T0→T1 в районе 125мс в прошлых отчётах может оказаться floor'ом, а не биологией. После фикса затронутые отчёты будут перегенерированы. Метрики T1→T2, угол прицела, kill-rate и hit-rate не затронуты.</span>
+    </p>
+
+    <h3 style="margin-top: 30px;">
+      <span data-lang="en">A2. Pre-aimed engagement T1 censoring</span>
+      <span data-lang="ru" style="display:none">A2. Цензура T1 в pre-aimed дуэлях</span>
+    </h3>
+    <p>
+      <span data-lang="en"><strong>Status:</strong> identified 2026-05-16 (companion to A), fix in progress.</span>
+      <span data-lang="ru" style="display:none"><strong>Статус:</strong> обнаружено 2026-05-16 (companion к A), фикс в работе.</span>
+    </p>
+    <p>
+      <span data-lang="en">If the player's crosshair was already on target at the moment of enemy visibility (perfect pre-aim — perception and motion-planning complete before T0), the current T1 detector requires "sustained crosshair movement towards enemy" that never happens, so T1 is censored to NaN. The engagement stays in the table but the reaction-time column is blank. The fastest pre-aimed engagements (where T0→T1 should be near zero) silently drop out of the aggregate distribution. The left tail of the reaction-time distribution is lost. Median rises artificially. Combined with A, both ends of the distribution are misreported. Fix: when crosshair is already within 1° of enemy at T0, set T1=T0 and flag the engagement as <code>pre_aimed</code> so it can be separated or pooled in reports.</span>
+      <span data-lang="ru" style="display:none">Если прицел игрока уже стоял на цели в момент видимости врага (идеальный pre-aim — восприятие и планирование движения завершились до T0), текущий T1-детектор требует «устойчивого движения прицела к врагу», которого нет → T1 цензурируется в NaN. Дуэль остаётся в таблице, но колонка времени реакции пустая. Самые быстрые pre-aimed дуэли (где T0→T1 должно быть около нуля) тихо выпадают из агрегированного распределения. Левый хвост распределения реакции теряется. Медиана искусственно растёт. В сочетании с A — оба конца распределения недостоверны. Фикс: когда прицел уже в пределах 1° от врага на T0, ставим T1=T0 и помечаем дуэль как <code>pre_aimed</code>, чтобы её можно было отделять или пулить в отчётах.</span>
+    </p>
+
+    <h3 style="margin-top: 30px;">
+      <span data-lang="en">A3. Duel-attempts pipeline missing two safety gates</span>
+      <span data-lang="ru" style="display:none">A3. В duel-attempts pipeline отсутствуют два safety gate</span>
+    </h3>
+    <p>
+      <span data-lang="en"><strong>Status:</strong> identified 2026-05-16 in code review, fix in progress. <strong>Affects:</strong> kill-rate and hit-rate aggregates only (engagements / T0→T1 / T1→T2 / crosshair angle are not affected).</span>
+      <span data-lang="ru" style="display:none"><strong>Статус:</strong> обнаружено 2026-05-16 в code review, фикс в работе. <strong>Затрагивает:</strong> только агрегаты kill-rate и hit-rate (engagements / T0→T1 / T1→T2 / угол прицела не затронуты).</span>
+    </p>
+    <p>
+      <span data-lang="en">The <code>engagements</code> pipeline received two safety fixes earlier (1) reject visibility through dissipating smoke, (2) reject engagements where the player was already dead. The parallel <code>duel_attempts</code> pipeline (which feeds kill-rate and hit-rate) was not updated with the same gates. It also does not skip flash-blinded ticks. Result: some "attempts" in the kill-rate denominator fired after the player died, or while flash-blinded, and shouldn't count. Estimated impact 3-8% inflation of attempts per player. Fix threads the same safety arguments into the attempts pipeline.</span>
+      <span data-lang="ru" style="display:none">Pipeline <code>engagements</code> получил два safety-фикса раньше: (1) отклонение видимости сквозь рассеивающийся дым, (2) отклонение дуэлей, где игрок уже мёртв. Параллельный pipeline <code>duel_attempts</code> (питающий kill-rate и hit-rate) не получил те же gate. Также не пропускает flash-blinded тики. Результат: часть «attempts» в знаменателе kill-rate сработали после смерти игрока или под флешем и не должны считаться. Оценочное влияние — 3-8% инфляция attempts на игрока. Фикс протаскивает те же safety-аргументы в attempts pipeline.</span>
+    </p>
+
+    <h3 style="margin-top: 30px;">
+      <span data-lang="en">B. Peek/hold mis-classification on strafing-hold</span>
+      <span data-lang="ru" style="display:none">B. Мис-классификация peek/hold при strafing-hold</span>
+    </h3>
+    <p>
+      <span data-lang="en"><strong>Status:</strong> identified 2026-05-14, deferred. <strong>What it means:</strong> A player holding a static angle while strafe-shooting (velocity &gt; 120 ups but actual head angle is locked) gets tagged <code>peek</code> instead of <code>hold</code>. This inflates peek samples slightly and may bias hold-only filters. Affects roughly 5-15% of edge-case engagements depending on player style. Root cause: <code>engagement_type</code> derived from instantaneous one-tick velocity, which is noisy. Fix sketch: cross-check with positional stability over a 4-tick window — strafing-hold has high instant velocity but ~zero positional drift.</span>
+      <span data-lang="ru" style="display:none"><strong>Статус:</strong> обнаружено 2026-05-14, отложено. <strong>Что значит:</strong> Игрок, держащий статичный угол под strafe-стрельбой (скорость &gt; 120 ups, но реально голова стоит на месте), тегается <code>peek</code> вместо <code>hold</code>. Это слегка раздувает peek-выборку и может смещать hold-only фильтры. Затрагивает примерно 5-15% edge-case дуэлей в зависимости от стиля игрока. Root cause: <code>engagement_type</code> берётся из мгновенной 1-тиковой скорости, которая шумная. Фикс: cross-check с positional stability на 4-тиковом окне — strafing-hold имеет высокую мгновенную скорость, но около-нулевой positional drift.</span>
+    </p>
+
+    <h3 style="margin-top: 30px;">
+      <span data-lang="en">C. Demoparser flags we don't trust</span>
+      <span data-lang="ru" style="display:none">C. Demoparser-флаги, которым мы не верим</span>
+    </h3>
+    <p>
+      <span data-lang="en"><code>m_bSpotted</code> and <code>m_bSpottedByMask</code> are not populated in CS2 GOTV demos and are never used. We do not use minimap markers, third-party heuristics, or any data not derived from raw position + viewangle ticks. Visibility = geometric raycast only.</span>
+      <span data-lang="ru" style="display:none"><code>m_bSpotted</code> и <code>m_bSpottedByMask</code> не заполняются в CS2 GOTV-демках и не используются. Мы не используем миникарту-маркеры, сторонние эвристики или какие-либо данные, не выведенные из raw position + viewangle тиков. Видимость = только геометрический raycast.</span>
+    </p>
+
+    <h3 style="margin-top: 30px;">
+      <span data-lang="en">D. Sample size caveats</span>
+      <span data-lang="ru" style="display:none">D. Ограничения по размеру выборки</span>
+    </h3>
+    <p>
+      <span data-lang="en">Pro benchmarks come from real tournament demos. N varies per player and per engagement type. Where N &lt; 30 for a specific player+type combination, results carry a confidence asterisk in the report. Single-match analyses (1 demo, 10-20 engagements) are not extrapolated to general skill claims — they're per-match diagnostics only.</span>
+      <span data-lang="ru" style="display:none">Pro-бенчмарки берутся из реальных турнирных демок. N варьируется по игроку и типу дуэли. Где N &lt; 30 для конкретной комбинации игрок+тип, результаты помечены звёздочкой доверия в отчёте. Анализы одного матча (1 демка, 10-20 дуэлей) не экстраполируются на общие заявления о навыке — это per-match диагностика.</span>
+    </p>
+
+    <h3 style="margin-top: 30px;">
+      <span data-lang="en">E. What the tool does NOT measure</span>
+      <span data-lang="ru" style="display:none">E. Что тул НЕ измеряет</span>
+    </h3>
+    <p>
+      <span data-lang="en">No utility timing, no nade lineups, no economy decisions, no team-state awareness, no opponent intent inference. Each engagement is analyzed in isolation: who saw whom first, how fast did they react, did they hit. If you want strategic / positional coaching, look elsewhere — this is a precision measurement tool, not a holistic coach.</span>
+      <span data-lang="ru" style="display:none">Нет тайминга утилки, нет nade lineups, нет экономических решений, нет team-state awareness, нет вывода intent оппонента. Каждая дуэль анализируется изолированно: кто кого увидел первым, как быстро отреагировал, попал ли. Если нужен стратегический / позиционный коучинг — смотри в другом месте, это инструмент точного измерения, не холистический коуч.</span>
+    </p>
+  </div>
+</section>
+
+<!-- AUDIT LOG -->
+<section id="audit">
+  <div class="container">
+    <p class="label">
+      <span data-lang="en">Audit Log</span>
+      <span data-lang="ru" style="display:none">Лог аудита</span>
+    </p>
+    <h2>
+      <span data-lang="en">Bug fixes &amp; methodology changes</span>
+      <span data-lang="ru" style="display:none">Багфиксы и изменения методологии</span>
+    </h2>
+
+    <ul style="line-height: 1.8;">
+      <li>
+        <strong>2026-05-16</strong> —
+        <span data-lang="en">T1 grace-period floor artifact identified (limitation A above). Reddit user <code>shimszy</code> indirectly surfaced it via comment that 133ms hardware-attributable delta seemed implausible. Investigation revealed the 125ms floor. Full audit followed and uncovered three companion issues (A2: pre-aimed T1 censoring; A3: duel-attempts pipeline missing after-death + flash gates). All four to ship in one fix batch. Fix in progress.</span>
+        <span data-lang="ru" style="display:none">Обнаружен floor-артефакт T1 grace-period (ограничение A выше). Reddit-пользователь <code>shimszy</code> косвенно поднял его комментарием, что 133мс hardware-attributable delta кажется неправдоподобной. Расследование обнаружило 125мс floor. Дальше прошёл полный аудит и нашёл три companion-проблемы (A2: цензура T1 для pre-aimed; A3: duel-attempts pipeline без after-death и flash gate). Все четыре пойдут одним fix-батчем. Фикс в работе.</span>
+      </li>
+      <li>
+        <strong>2026-05-14</strong> —
+        <span data-lang="en">Bug A fixed: phantom T0 detection through dissipating smoke. T0Detector now gates visibility on active smoke geometry, not just world geometry.</span>
+        <span data-lang="ru" style="display:none">Багфикс A: фантомный T0 сквозь рассеивающийся дым. T0Detector теперь гейтит видимость на геометрии активных дымов, не только мировой геометрии.</span>
+      </li>
+      <li>
+        <strong>2026-05-14</strong> —
+        <span data-lang="en">Bug C fixed: phantom engagements after player death. Visibility check now gates on <code>is_alive</code> — corpses and spectator perspectives no longer fabricate engagements.</span>
+        <span data-lang="ru" style="display:none">Багфикс C: фантомные дуэли после смерти игрока. Проверка видимости теперь гейтит на <code>is_alive</code> — трупы и spectator-перспективы больше не фабрикуют дуэли.</span>
+      </li>
+      <li>
+        <strong>2026-05-14</strong> —
+        <span data-lang="en"><code>round_time_s</code> off-by-20s fix: previously anchored on <code>round_start</code> (includes freeze phase). Now anchored on <code>round_freeze_end</code>. Affects round-phase classification (early / mid / late) but not RT measurements.</span>
+        <span data-lang="ru" style="display:none">Фикс <code>round_time_s</code> off-by-20s: ранее анкорился на <code>round_start</code> (включает freeze-фазу). Теперь анкорится на <code>round_freeze_end</code>. Влияет на классификацию фазы раунда (early / mid / late), не на RT-измерения.</span>
+      </li>
+    </ul>
+
+    <p style="margin-top: 30px; font-size: 0.95em; color: var(--text-muted);">
+      <span data-lang="en">Want to flag a methodology concern? DM on Telegram or comment on the Reddit threads — credible findings get fixed and credited here.</span>
+      <span data-lang="ru" style="display:none">Хочешь указать на методологическую проблему? Пиши в Telegram или комментируй Reddit-треды — обоснованные находки фиксятся и кредитуются здесь.</span>
+    </p>
+
+    <p style="margin-top: 30px;">
+      <a href="/" class="cta-pay-link">
+        <span data-lang="en">← back to landing</span>
+        <span data-lang="ru" style="display:none">← на главную</span>
+      </a>
+    </p>
+  </div>
+</section>
+
+</main>
+
+<script>
+function setLang(lang) {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-lang]').forEach(el => {
+    el.style.display = el.dataset.lang === lang ? '' : 'none';
+  });
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-en').setAttribute('aria-pressed', lang === 'en');
+  document.getElementById('btn-ru').classList.toggle('active', lang === 'ru');
+  document.getElementById('btn-ru').setAttribute('aria-pressed', lang === 'ru');
+}
+</script>
+
+</body>
+</html>

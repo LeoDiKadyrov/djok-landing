@@ -253,6 +253,35 @@ section + section::before { content: '' !important; display: none !important; }
 }
 .alpha-banner .container { padding: 8px 24px; }
 
+/* ── Data-refresh banner — CS 1.6 red alert override ────────── */
+.data-refresh-banner {
+  background: #3a1818 !important;
+  border-top: 2px solid #8a2a2a !important;
+  border-bottom: 2px solid #5a1a1a !important;
+  color: var(--accent) !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+.data-refresh-banner .container { padding: 8px 24px; }
+.data-refresh-banner .alert-mark {
+  color: #ff7a3a !important;
+  text-shadow: none !important;
+}
+.data-refresh-banner strong {
+  color: #ffb84a !important;
+  text-shadow: none !important;
+}
+.data-refresh-banner .alert-link {
+  color: var(--accent) !important;
+  text-shadow: none !important;
+  border-bottom: 1px solid var(--accent) !important;
+  text-decoration: none !important;
+}
+.data-refresh-banner .alert-link:hover {
+  color: var(--text) !important;
+  border-bottom-color: var(--text) !important;
+}
+
 .badge {
   background: var(--bg-deep) !important;
   color: var(--accent) !important;

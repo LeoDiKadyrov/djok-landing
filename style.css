@@ -452,6 +452,56 @@ footer {
   }
 }
 
+/* ── Data-refresh banner (Phase 10 ship 2026-05-16) ─────────── */
+.data-refresh-banner {
+  background: #3d1a1a;
+  border-bottom: 2px solid #a83232;
+  color: #ffd56e;
+  padding: 10px 0;
+  font-size: 0.85rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.data-refresh-banner .container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.data-refresh-banner .alert-mark {
+  color: #ff6b35;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.data-refresh-banner strong {
+  color: #ff6b35;
+}
+
+.data-refresh-banner .alert-link {
+  color: #c4b550;
+  text-decoration: underline;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+.data-refresh-banner .alert-link:hover {
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .data-refresh-banner {
+    font-size: 0.78rem;
+  }
+  .data-refresh-banner .container {
+    padding: 0 16px;
+  }
+}
+
 /* ── FAQ ──────────────────────────────────────────────────── */
 .faq-list {
   display: flex;
